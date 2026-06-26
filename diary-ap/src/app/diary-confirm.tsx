@@ -9,40 +9,60 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { BROWSER_HISTORY_MOCK } from '@/mock/browser';
 import { LINE_MOCK_MESSAGES } from '@/mock/line';
+import { CalendarService } from '@/services/calendar';
+import { LocationService } from '@/services/location';
+import { PhotoService } from '@/services/photo';
 
-// ─── Rule-based 日記生成（仮実装） ───────────────────────────────────────────
+// ─── Rule-based 日記生成 ──────────────────────────────────────────────────────
 // TODO: Phase 1B でAIモデル（Local / Cloud / Rule-based Provider）に差し替える
-// 仕様書参照: AIモデル抽象化方針
-function generateDiaryDraft(): Promise<string> {
-  return new Promise((resolve) => {
-    // 収集データのサマリーを文章にする（ルールベース）
-    const today = new Date();
-    const dateStr = `${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日`;
+async function generateDiaryDraft(): Promise<string> {
+  const today = new Date();
+  const dateStr = `${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日`;
 
-    // モックデータから出来事を組み立て
-    const lineEvents = LINE_MOCK_MESSAGES.map(m => `・${m.sender}と「${m.body.slice(0, 15)}...」のやりとり`).slice(0, 2);
-    const browserEvents = BROWSER_HISTORY_MOCK.map(b => `・「${b.title}」を調べた`).slice(0, 2);
+  // 各サービスからデータを並列取得（失敗しても日記生成は続ける）
+  const [events, location, photos] = await Promise.all([
+    CalendarService.getTodayEvents().catch(() => []),
+    LocationService.getCurrentLocation().catch(() => null),
+    PhotoService.getTodayPhotos().catch(() => []),
+  ]);
 
-    const draft = [
-      `【${dateStr}の日記】`,
-      '',
-      // TODO: 実データ（写真・カレンダー・位置・HealthKit）を反映する
-      // 仮: HealthKitデータ（モック）
-      '今日は8,432歩歩いた。',
-      '',
-      'LINEでのやりとり:',
-      ...lineEvents,
-      '',
-      '調べたこと:',
-      ...browserEvents,
-      '',
-      // TODO: カレンダー予定を反映する（expo-calendar）
-      '（予定・位置情報・写真は実装予定）',
-    ].join('\n');
+  const lineEvents = LINE_MOCK_MESSAGES
+    .map(m => `・${m.sender}と「${m.body.slice(0, 15)}...」のやりとり`)
+    .slice(0, 2);
+  const browserEvents = BROWSER_HISTORY_MOCK
+    .map(b => `・「${b.title}」を調べた`)
+    .slice(0, 2);
+  const calendarLines = events.length > 0
+    ? events.map(e => `・${e.title}`)
+    : ['・予定なし（またはカレンダー未連携）'];
+  const locationLine = location
+    ? `今日は主に ${location.placeName} にいた。`
+    : '（位置情報: 実装予定）';
+  const photoLine = photos.length > 0
+    ? `写真を ${photos.length} 枚撮影した。`
+    : '（写真: 実装予定）';
 
-    // 生成に時間がかかるように見せる（実AI実装後は不要）
-    setTimeout(() => resolve(draft), 1500);
-  });
+  // TODO: 実装後は歩数をHealthKitから取得する
+  const lines = [
+    `【${dateStr}の日記】`,
+    '',
+    locationLine,
+    photoLine,
+    '今日は8,432歩歩いた。（TODO: HealthKitから取得）',
+    '',
+    '予定:',
+    ...calendarLines,
+    '',
+    'LINEでのやりとり:',
+    ...lineEvents,
+    '',
+    '調べたこと:',
+    ...browserEvents,
+  ];
+
+  // 生成に時間がかかるように見せる（実AI実装後は不要）
+  await new Promise(r => setTimeout(r, 1500));
+  return lines.join('\n');
 }
 
 export default function DiaryConfirmScreen() {
