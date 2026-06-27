@@ -89,18 +89,14 @@ export default function HomeScreen() {
             <ThemedText type="small">設定</ThemedText>
           </TouchableOpacity>
 
-          {/* AIと相談（実装予定） */}
+          {/* AIと相談 */}
           <TouchableOpacity
-            style={[styles.subButton, styles.subButtonDisabled, { backgroundColor: theme.backgroundElement }]}
+            style={[styles.subButton, { backgroundColor: theme.backgroundElement }]}
             onPress={() => router.push('/ai-chat')}
             activeOpacity={0.8}
           >
             <ThemedText style={styles.subButtonIcon}>🤖</ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">AIと相談</ThemedText>
-            {/* TODO: 実装後にdisabledを外す */}
-            <ThemedText type="small" themeColor="textSecondary" style={styles.comingSoon}>
-              準備中
-            </ThemedText>
+            <ThemedText type="small">AIと相談</ThemedText>
           </TouchableOpacity>
 
         </View>

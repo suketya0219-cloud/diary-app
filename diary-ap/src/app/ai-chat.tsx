@@ -1,55 +1,119 @@
-import { StyleSheet, View } from 'react-native';
+import { useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  FlatList,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
+import { chat } from '@/services/gemini';
 
-// ─── AIと相談画面（実装予定）────────────────────────────────────────────────
-//
-// TODO: Phase 4（Personal Context Provider）で実装する
-// 機能イメージ:
-//   - 蓄積したPersonal Contextを参照してAIと対話
-//   - 目的別Context Packを生成してAIへ最小提供
-//   - 利用目的・提供範囲をユーザーが確認できるUI
-//
-// AI統合方針:
-//   - Local Model Provider（Apple Foundation Models）優先
-//   - フォールバック: Cloud Model Provider / Rule-based
-//   - 仕様書参照: AIモデル抽象化方針 / Personal Context Provider
+type Message = {
+  id: string;
+  role: 'user' | 'model';
+  text: string;
+};
 
 export default function AiChatScreen() {
+  const theme = useTheme();
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const listRef = useRef<FlatList>(null);
+
+  const handleSend = async () => {
+    const text = input.trim();
+    if (!text || loading) return;
+
+    const userMsg: Message = { id: Date.now().toString(), role: 'user', text };
+    const nextMessages = [...messages, userMsg];
+    setMessages(nextMessages);
+    setInput('');
+    setLoading(true);
+
+    try {
+      const history = messages.map((m) => ({ role: m.role, text: m.text }));
+      const reply = await chat(history, text);
+      setMessages([...nextMessages, { id: (Date.now() + 1).toString(), role: 'model', text: reply }]);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setMessages([...nextMessages, { id: (Date.now() + 1).toString(), role: 'model', text: `エラー: ${msg}` }]);
+    } finally {
+      setLoading(false);
+      setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
+    }
+  };
+
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['bottom']}>
-        <View style={styles.center}>
+        <KeyboardAvoidingView
+          style={styles.inner}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={90}
+        >
+          {/* メッセージリスト */}
+          <FlatList
+            ref={listRef}
+            data={messages}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.listContent}
+            onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
+            ListEmptyComponent={
+              <View style={styles.empty}>
+                <ThemedText style={styles.emptyIcon}>🤖</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary" style={styles.emptyText}>
+                  Gemini に何でも聞いてみてください
+                </ThemedText>
+              </View>
+            }
+            renderItem={({ item }) => (
+              <View style={[styles.bubble, item.role === 'user' ? styles.bubbleUser : styles.bubbleModel]}>
+                <ThemedText
+                  style={[
+                    styles.bubbleText,
+                    { color: item.role === 'user' ? '#fff' : theme.text },
+                  ]}
+                >
+                  {item.text}
+                </ThemedText>
+              </View>
+            )}
+          />
 
-          <ThemedText style={styles.icon}>🤖</ThemedText>
-
-          <ThemedText type="subtitle" style={styles.title}>
-            AIと相談
-          </ThemedText>
-
-          <ThemedText type="small" themeColor="textSecondary" style={styles.description}>
-            あなたの個人コンテキストをもとに、AIがサポートします。
-          </ThemedText>
-
-          <ThemedView type="backgroundElement" style={styles.comingSoonCard}>
-            <ThemedText type="smallBold">実装予定</ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              Phase 4（Personal Context Provider）で利用可能になります。
-            </ThemedText>
-          </ThemedView>
-
-          {/* TODO: 実装内容
-            1. チャット入力UI
-            2. Personal Contextからの関連情報抽出
-            3. Context Packの生成と提供範囲の確認UI
-            4. AIモデル（Local/Cloud/Rule-based）への接続
-            5. 提供履歴の監査ログ保存
-          */}
-
-        </View>
+          {/* 入力エリア */}
+          <View style={[styles.inputRow, { backgroundColor: theme.backgroundElement }]}>
+            <TextInput
+              style={[styles.input, { color: theme.text }]}
+              placeholder="メッセージを入力..."
+              placeholderTextColor={theme.textSecondary}
+              value={input}
+              onChangeText={setInput}
+              onSubmitEditing={handleSend}
+              returnKeyType="send"
+              multiline
+            />
+            <TouchableOpacity
+              style={[styles.sendButton, { backgroundColor: theme.text }, (!input.trim() || loading) && styles.sendButtonDisabled]}
+              onPress={handleSend}
+              disabled={!input.trim() || loading}
+            >
+              {loading
+                ? <ActivityIndicator color={theme.background} size="small" />
+                : <ThemedText style={[styles.sendIcon, { color: theme.background }]}>↑</ThemedText>
+              }
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </ThemedView>
   );
@@ -58,22 +122,65 @@ export default function AiChatScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   safeArea: { flex: 1 },
-  center: {
+  inner: { flex: 1 },
+  listContent: {
+    padding: Spacing.three,
+    gap: Spacing.two,
+    flexGrow: 1,
+    justifyContent: 'flex-end',
+  },
+  empty: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: Spacing.four,
-    gap: Spacing.three,
+    gap: Spacing.two,
+    paddingVertical: Spacing.six,
   },
-  icon: { fontSize: 64 },
-  title: { textAlign: 'center' },
-  description: { textAlign: 'center' },
-  comingSoonCard: {
+  emptyIcon: { fontSize: 48 },
+  emptyText: { textAlign: 'center' },
+  bubble: {
+    maxWidth: '80%',
     padding: Spacing.three,
     borderRadius: Spacing.two,
+  },
+  bubbleUser: {
+    alignSelf: 'flex-end',
+    backgroundColor: '#3c87f7',
+    borderBottomRightRadius: Spacing.half,
+  },
+  bubbleModel: {
+    alignSelf: 'flex-start',
+    borderBottomLeftRadius: Spacing.half,
+  },
+  bubbleText: {
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    margin: Spacing.three,
+    borderRadius: Spacing.three,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    gap: Spacing.two,
+  },
+  input: {
+    flex: 1,
+    fontSize: 15,
+    maxHeight: 120,
+    paddingVertical: Spacing.one,
+  },
+  sendButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     alignItems: 'center',
-    gap: Spacing.one,
-    marginTop: Spacing.two,
-    width: '100%',
+    justifyContent: 'center',
+  },
+  sendButtonDisabled: { opacity: 0.4 },
+  sendIcon: {
+    fontSize: 18,
+    fontWeight: '700',
   },
 });
