@@ -1,10 +1,13 @@
 const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY ?? '';
-const BASE_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
+const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
 async function callGemini(contents: object[]): Promise<string> {
   const res = await fetch(BASE_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'x-goog-api-key': API_KEY,
+    },
     body: JSON.stringify({ contents }),
   });
   if (!res.ok) throw new Error(await res.text());
