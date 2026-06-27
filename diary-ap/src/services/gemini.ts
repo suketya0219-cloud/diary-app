@@ -1,4 +1,4 @@
-const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY ?? '';
+const API_KEY = (process.env.EXPO_PUBLIC_GEMINI_API_KEY ?? '').replace(/[^\x20-\x7E]/g, '');
 const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
 async function callGemini(contents: object[]): Promise<string> {
