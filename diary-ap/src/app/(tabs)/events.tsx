@@ -106,14 +106,15 @@ export default function EventsScreen() {
         <ScrollView showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
             <ThemedText type="subtitle">予定</ThemedText>
-            <TouchableOpacity
-              style={[styles.createButton, { backgroundColor: theme.text }]}
-              onPress={() => router.push('/ai-chat')}
-              activeOpacity={0.8}
-            >
-              <ThemedText style={[styles.createButtonText, { color: theme.background }]}>＋ 作る</ThemedText>
-            </TouchableOpacity>
           </View>
+
+          <TouchableOpacity
+            style={[styles.createButton, { backgroundColor: theme.text }]}
+            onPress={() => router.push('/ai-chat')}
+            activeOpacity={0.8}
+          >
+            <ThemedText style={[styles.createButtonText, { color: theme.background }]}>＋ 予定を作る</ThemedText>
+          </TouchableOpacity>
 
           {sections.map(({ title, events }) => (
             <View key={title} style={styles.section}>
@@ -147,12 +148,14 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.two,
   },
   createButton: {
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.one,
-    borderRadius: Spacing.one,
+    marginHorizontal: Spacing.four,
+    marginBottom: Spacing.two,
+    padding: Spacing.three,
+    borderRadius: Spacing.two,
+    alignItems: 'center',
   },
   createButtonText: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
   },
   section: {
