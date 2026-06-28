@@ -108,7 +108,7 @@ export default function EventsScreen() {
             <ThemedText type="subtitle">予定</ThemedText>
             <TouchableOpacity
               style={[styles.createButton, { backgroundColor: theme.text }]}
-              onPress={() => router.push('/events/create' as any)}
+              onPress={() => router.push('/ai-chat')}
               activeOpacity={0.8}
             >
               <ThemedText style={[styles.createButtonText, { color: theme.background }]}>＋ 作る</ThemedText>
