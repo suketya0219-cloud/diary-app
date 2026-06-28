@@ -1,19 +1,18 @@
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import { useColorScheme } from 'react-native';
 
-// タブナビゲーション（boilerplate）からStackナビゲーションに変更
-// 全画面に左上の戻るボタンが自動的につく（Stackのデフォルト動作）
 export default function RootLayout() {
   const colorScheme = useColorScheme();
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
-        {/* ホーム: ヘッダー非表示（カスタムレイアウトを使用） */}
-        <Stack.Screen name="index" options={{ headerShown: false }} />
+        {/* タブ群（ホーム・予定・出来事・日記・AI） */}
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
 
-        {/* カレンダー */}
-        <Stack.Screen name="calendar" options={{ title: 'カレンダー' }} />
+        {/* 予定詳細（タブ外・フルスクリーン） */}
+        <Stack.Screen name="events/[id]" options={{ title: '予定' }} />
+        <Stack.Screen name="events/create" options={{ title: '予定を作る' }} />
 
         {/* 日記生成後の確認・編集 */}
         <Stack.Screen name="diary-confirm" options={{ title: '今日の日記' }} />
@@ -23,9 +22,6 @@ export default function RootLayout() {
 
         {/* 設定 */}
         <Stack.Screen name="settings" options={{ title: '設定' }} />
-
-        {/* AIと相談（実装予定） */}
-        <Stack.Screen name="ai-chat" options={{ title: 'AIと相談' }} />
       </Stack>
     </ThemeProvider>
   );

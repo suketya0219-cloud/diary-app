@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "diary-ap",
-    "slug": "diary-ap",
+    "slug": "ichi",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -39,6 +39,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "28f1d6fe-b39e-4a52-9afd-99f5a58be86e"
+      }
+    },
+    "owner": "ichiichiurusais-team"
   }
 }
