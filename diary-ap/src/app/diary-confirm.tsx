@@ -13,9 +13,10 @@ import { CalendarService } from '@/services/calendar';
 import { LocationService } from '@/services/location';
 import { PhotoService } from '@/services/photo';
 import { generateDiaryEntry } from '@/services/gemini';
+import type { DiaryContext } from '@/services/gemini';
 import { activityStore } from '@/store/activities';
 
-async function generateDiaryDraft(): Promise<string> {
+async function generateDiaryDraft(): Promise<DiaryContext> {
   const today = new Date();
   const dateStr = `${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日`;
 
@@ -33,7 +34,7 @@ async function generateDiaryDraft(): Promise<string> {
     date: dateStr,
     location: location?.placeName ?? includedActivities.find((a) => a.location)?.location,
     photoCount: photos.length || includedActivities.filter((a) => a.type === 'photo').length,
-    steps: 8432, // TODO: HealthKitから取得
+    steps: 8432,
     calendarEvents: [...calendarTitles, ...activityTitles],
     lineMessages: LINE_MOCK_MESSAGES.slice(0, 3),
     browserHistory: BROWSER_HISTORY_MOCK.slice(0, 3),
@@ -43,20 +44,21 @@ async function generateDiaryDraft(): Promise<string> {
 export default function DiaryConfirmScreen() {
   const theme = useTheme();
   const [isGenerating, setIsGenerating] = useState(true);
+  const [context, setContext] = useState<DiaryContext | null>(null);
   const [diaryText, setDiaryText] = useState('');
 
   useEffect(() => {
-    generateDiaryDraft().then((draft) => {
-      setDiaryText(draft);
+    generateDiaryDraft().then((result) => {
+      setContext(result);
+      setDiaryText(result.diary_text);
       setIsGenerating(false);
     });
   }, []);
 
-  // TODO: SQLiteに保存する。現在はコンソールログのみ
   const handleSave = () => {
     console.log('保存する日記:', diaryText);
-    // TODO: INSERT INTO diaries (date, draft_text, confirmed_text, is_confirmed, ...) VALUES (...)
-    // TODO: 修正前後の差分をedit_historyに記録する（Personal Context形成に使用）
+    console.log('コンテキスト:', context);
+    // TODO: SQLiteに保存
     router.back();
   };
 
@@ -69,38 +71,18 @@ export default function DiaryConfirmScreen() {
             <ThemedText type="small" themeColor="textSecondary" style={styles.loadingText}>
               今日の出来事をまとめています...
             </ThemedText>
-            {/* TODO: 実際のデータ収集状況をここに表示する */}
-            <ThemedText type="small" themeColor="textSecondary">
-              📍 位置情報を取得中（実装予定）
-            </ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              📷 写真を確認中（実装予定）
-            </ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              📅 カレンダーを確認中（実装予定）
-            </ThemedText>
           </View>
         ) : (
           <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
 
-            {/* 注意書き: AI推論と事実の分離 */}
-            <ThemedView type="backgroundElement" style={styles.noteCard}>
-              <ThemedText type="small" themeColor="textSecondary">
-                ✏️ 内容を確認・編集して保存してください。
-              </ThemedText>
-              {/* TODO: 事実・本人入力・AI推論を分けて表示する（仕様書: コンテンツ種別）*/}
-            </ThemedView>
-
-            {/* 日記テキスト編集エリア */}
+            {/* 日記テキスト編集 */}
+            <ThemedText type="smallBold">日記</ThemedText>
             <TextInput
-              style={[
-                styles.textInput,
-                {
-                  color: theme.text,
-                  backgroundColor: theme.backgroundElement,
-                  borderColor: theme.backgroundSelected,
-                }
-              ]}
+              style={[styles.textInput, {
+                color: theme.text,
+                backgroundColor: theme.backgroundElement,
+                borderColor: theme.backgroundSelected,
+              }]}
               multiline
               value={diaryText}
               onChangeText={setDiaryText}
@@ -108,10 +90,69 @@ export default function DiaryConfirmScreen() {
               placeholderTextColor={theme.textSecondary}
             />
 
+            {/* 抽出されたコンテキスト */}
+            {context && (
+              <ThemedView type="backgroundElement" style={styles.contextCard}>
+                <ThemedText type="smallBold" style={styles.contextTitle}>抽出されたコンテキスト</ThemedText>
+
+                {context.summary ? (
+                  <View style={styles.contextRow}>
+                    <ThemedText type="small" themeColor="textSecondary">要約</ThemedText>
+                    <ThemedText type="small">{context.summary}</ThemedText>
+                  </View>
+                ) : null}
+
+                {context.mood ? (
+                  <View style={styles.contextRow}>
+                    <ThemedText type="small" themeColor="textSecondary">気分</ThemedText>
+                    <ThemedText type="small">{context.mood}</ThemedText>
+                  </View>
+                ) : null}
+
+                {context.activities.length > 0 && (
+                  <View style={styles.contextRow}>
+                    <ThemedText type="small" themeColor="textSecondary">活動</ThemedText>
+                    <View style={styles.pillRow}>
+                      {context.activities.map((a) => (
+                        <View key={a} style={[styles.pill, { backgroundColor: theme.backgroundSelected }]}>
+                          <ThemedText type="small">{a}</ThemedText>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                )}
+
+                {context.places.length > 0 && (
+                  <View style={styles.contextRow}>
+                    <ThemedText type="small" themeColor="textSecondary">場所</ThemedText>
+                    <View style={styles.pillRow}>
+                      {context.places.map((p) => (
+                        <View key={p} style={[styles.pill, { backgroundColor: theme.backgroundSelected }]}>
+                          <ThemedText type="small">{p}</ThemedText>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                )}
+
+                {context.with_people.length > 0 && (
+                  <View style={styles.contextRow}>
+                    <ThemedText type="small" themeColor="textSecondary">一緒にいた人</ThemedText>
+                    <View style={styles.pillRow}>
+                      {context.with_people.map((p) => (
+                        <View key={p} style={[styles.pill, { backgroundColor: theme.backgroundSelected }]}>
+                          <ThemedText type="small">{p}</ThemedText>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                )}
+              </ThemedView>
+            )}
+
           </ScrollView>
         )}
 
-        {/* 保存ボタン */}
         {!isGenerating && (
           <TouchableOpacity
             style={[styles.saveButton, { backgroundColor: theme.text }]}
@@ -143,18 +184,38 @@ const styles = StyleSheet.create({
   },
   scroll: { flex: 1 },
   scrollContent: { gap: Spacing.three, paddingTop: Spacing.three },
-  noteCard: {
-    padding: Spacing.three,
-    borderRadius: Spacing.two,
-  },
   textInput: {
     borderWidth: 1,
     borderRadius: Spacing.two,
     padding: Spacing.three,
     fontSize: 16,
     lineHeight: 24,
-    minHeight: 300,
+    minHeight: 200,
     textAlignVertical: 'top',
+  },
+  contextCard: {
+    padding: Spacing.three,
+    borderRadius: Spacing.two,
+    gap: Spacing.two,
+  },
+  contextTitle: {
+    marginBottom: Spacing.one,
+  },
+  contextRow: {
+    flexDirection: 'row',
+    gap: Spacing.two,
+    alignItems: 'flex-start',
+  },
+  pillRow: {
+    flex: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.one,
+  },
+  pill: {
+    paddingHorizontal: Spacing.two,
+    paddingVertical: 2,
+    borderRadius: Spacing.one,
   },
   saveButton: {
     padding: Spacing.four,
