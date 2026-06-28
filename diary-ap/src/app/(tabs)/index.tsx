@@ -47,6 +47,13 @@ export default function HomeScreen() {
           {/* 日付 */}
           <View style={styles.header}>
             <ThemedText type="small" themeColor="textSecondary">{dateLabel}</ThemedText>
+            <TouchableOpacity
+              onPress={() => router.push('/settings')}
+              activeOpacity={0.7}
+              style={styles.settingsButton}
+            >
+              <ThemedText style={styles.settingsIcon}>⚙️</ThemedText>
+            </TouchableOpacity>
           </View>
 
           {/* データサマリー */}
@@ -143,6 +150,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     paddingTop: Spacing.four,
     paddingBottom: Spacing.one,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  settingsButton: {
+    padding: Spacing.one,
+  },
+  settingsIcon: {
+    fontSize: 18,
   },
   section: {
     paddingHorizontal: Spacing.four,
