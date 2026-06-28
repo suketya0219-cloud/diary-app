@@ -13,6 +13,7 @@ import { CalendarService } from '@/services/calendar';
 import { LocationService } from '@/services/location';
 import { PhotoService } from '@/services/photo';
 import { generateDiaryEntry } from '@/services/gemini';
+import { activityStore } from '@/store/activities';
 
 async function generateDiaryDraft(): Promise<string> {
   const today = new Date();
@@ -24,12 +25,16 @@ async function generateDiaryDraft(): Promise<string> {
     PhotoService.getTodayPhotos().catch(() => []),
   ]);
 
+  const includedActivities = activityStore.getIncluded();
+  const activityTitles = includedActivities.map((a) => a.title);
+  const calendarTitles = events.map((e) => e.title);
+
   return generateDiaryEntry({
     date: dateStr,
-    location: location?.placeName,
-    photoCount: photos.length,
+    location: location?.placeName ?? includedActivities.find((a) => a.location)?.location,
+    photoCount: photos.length || includedActivities.filter((a) => a.type === 'photo').length,
     steps: 8432, // TODO: HealthKitから取得
-    calendarEvents: events.map(e => e.title),
+    calendarEvents: [...calendarTitles, ...activityTitles],
     lineMessages: LINE_MOCK_MESSAGES.slice(0, 3),
     browserHistory: BROWSER_HISTORY_MOCK.slice(0, 3),
   });

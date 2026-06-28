@@ -7,7 +7,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { MOCK_ACTIVITIES } from '@/mock/events';
+import { activityStore } from '@/store/activities';
 import type { Activity } from '@/types/events';
 
 function formatTime(iso: string) {
@@ -26,12 +26,14 @@ const TYPE_EMOJI: Record<string, string> = {
 
 export default function ActivityScreen() {
   const theme = useTheme();
-  const [activities, setActivities] = useState<Activity[]>(MOCK_ACTIVITIES);
+  const [activities, setActivities] = useState<Activity[]>(activityStore.get());
 
   const toggleActivity = (id: string) => {
-    setActivities((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, includedInDiary: !a.includedInDiary } : a))
-    );
+    setActivities((prev) => {
+      const next = prev.map((a) => (a.id === id ? { ...a, includedInDiary: !a.includedInDiary } : a));
+      activityStore.set(next);
+      return next;
+    });
   };
 
   const includedCount = activities.filter((a) => a.includedInDiary).length;
