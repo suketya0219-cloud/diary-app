@@ -1,11 +1,8 @@
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
-import { useColorScheme } from 'react-native';
+import { DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={DefaultTheme}>
       <Stack>
         {/* タブ群（ホーム・予定・出来事・日記・AI） */}
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -19,6 +16,12 @@ export default function RootLayout() {
 
         {/* 過去の日記詳細・編集（日付別） */}
         <Stack.Screen name="diary/[date]" options={{ title: '日記' }} />
+
+        {/* AIチャット画面 */}
+        <Stack.Screen name="ai-chat-screen" options={{ title: 'AI会話' }} />
+
+        {/* AIコンテンツ（占い・データ・性格） */}
+        <Stack.Screen name="ai-content/[type]" options={{ title: 'AI分析' }} />
 
         {/* LINEチャット（友達別） */}
         <Stack.Screen name="line-chat/[friendId]" options={{ title: 'トーク' }} />
