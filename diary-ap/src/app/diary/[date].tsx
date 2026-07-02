@@ -7,20 +7,20 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { DIARY_HISTORY } from '@/mock/diary-history';
 
-// TODO: SQLiteから対象日付の日記を取得する
-// SELECT * FROM diaries WHERE date = :date
 function useDiaryByDate(date: string) {
-  const mockText = `【${date}の日記】\n\nこの日はまだ日記がありません。\n\n（TODO: SQLiteから実データを取得する）`;
-  const [text, setText] = useState(mockText);
-  const [isSaved, setIsSaved] = useState(false);
-  return { text, setText, isSaved, setIsSaved };
+  const entry = DIARY_HISTORY.find((d) => d.date === date);
+  const initial = entry?.context.diary_text ?? '';
+  const [text, setText] = useState(initial);
+  const [isSaved, setIsSaved] = useState(!!entry?.saved);
+  return { text, setText, isSaved, setIsSaved, context: entry?.context };
 }
 
 export default function DiaryDetailScreen() {
   const { date } = useLocalSearchParams<{ date: string }>();
   const theme = useTheme();
-  const { text, setText, isSaved, setIsSaved } = useDiaryByDate(date ?? '');
+  const { text, setText, isSaved, setIsSaved, context } = useDiaryByDate(date ?? '');
 
   const handleSave = () => {
     // TODO: UPDATE diaries SET confirmed_text = :text, updated_at = NOW() WHERE date = :date
@@ -44,6 +44,31 @@ export default function DiaryDetailScreen() {
         </View>
 
         <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+
+          {/* コンテキストサマリー */}
+          {context && (
+            <ThemedView type="backgroundElement" style={styles.contextCard}>
+              {context.summary ? <ThemedText type="smallBold">{context.summary}</ThemedText> : null}
+              <View style={styles.pillRow}>
+                {context.mood ? (
+                  <View style={[styles.pill, { backgroundColor: theme.backgroundSelected }]}>
+                    <ThemedText type="small">{context.mood}</ThemedText>
+                  </View>
+                ) : null}
+                {context.activities.map((a) => (
+                  <View key={a} style={[styles.pill, { backgroundColor: theme.backgroundSelected }]}>
+                    <ThemedText type="small">{a}</ThemedText>
+                  </View>
+                ))}
+                {context.places.map((p) => (
+                  <View key={p} style={[styles.pill, { backgroundColor: theme.backgroundSelected }]}>
+                    <ThemedText type="small">📍{p}</ThemedText>
+                  </View>
+                ))}
+              </View>
+            </ThemedView>
+          )}
+
           <TextInput
             style={[
               styles.textInput,
@@ -86,7 +111,18 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.two,
   },
   scroll: { flex: 1 },
-  scrollContent: { paddingTop: Spacing.two },
+  scrollContent: { paddingTop: Spacing.two, gap: Spacing.three },
+  contextCard: {
+    padding: Spacing.three,
+    borderRadius: Spacing.two,
+    gap: Spacing.two,
+  },
+  pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.one },
+  pill: {
+    paddingHorizontal: Spacing.two,
+    paddingVertical: 2,
+    borderRadius: Spacing.one,
+  },
   textInput: {
     borderWidth: 1,
     borderRadius: Spacing.two,
