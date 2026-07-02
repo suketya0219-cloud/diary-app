@@ -7,17 +7,9 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { DIARY_HISTORY } from '@/mock/diary-history';
 
-const MOCK_DIARY_DATES = new Set(['2026-06-20', '2026-06-22', '2026-06-24', '2026-06-27']);
-
-const MOCK_DIARIES = [
-  {
-    date: '2026-06-27',
-    summary: '買い物と夕方の散歩',
-    confirmedText: '昨日は日用品の買い物をして、夕方に近所の公園まで散歩しました。',
-    status: 'confirmed' as const,
-  },
-];
+const DIARY_DATE_SET = new Set(DIARY_HISTORY.filter((d) => d.saved).map((d) => d.date));
 
 function getDaysInMonth(year: number, month: number) {
   return new Date(year, month + 1, 0).getDate();
@@ -95,7 +87,7 @@ export default function DiaryScreen() {
                 {wk.map((day, di) => {
                   if (!day) return <View key={di} style={styles.dayCell} />;
                   const ds = dateStr(day);
-                  const hasDiary = MOCK_DIARY_DATES.has(ds);
+                  const hasDiary = DIARY_DATE_SET.has(ds);
                   const isToday = day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
                   return (
                     <TouchableOpacity
@@ -115,29 +107,34 @@ export default function DiaryScreen() {
 
           {/* 日記一覧 */}
           <View style={styles.section}>
-            <ThemedText type="smallBold" style={styles.sectionTitle}>確定済み日記</ThemedText>
-            {MOCK_DIARIES.map((diary) => (
-              <TouchableOpacity
-                key={diary.date}
-                onPress={() => router.push(`/diary/${diary.date}`)}
-                activeOpacity={0.8}
-              >
-                <ThemedView type="backgroundElement" style={styles.diaryCard}>
-                  <View style={styles.diaryRow}>
-                    <View style={styles.diaryContent}>
-                      <ThemedText type="smallBold">{diary.date}</ThemedText>
-                      <ThemedText type="small" themeColor="textSecondary">{diary.summary}</ThemedText>
-                      <ThemedText type="small" themeColor="textSecondary" numberOfLines={2}>
-                        {diary.confirmedText}
-                      </ThemedText>
+            <ThemedText type="smallBold" style={styles.sectionTitle}>
+              確定済み日記（{DIARY_HISTORY.filter((d) => d.saved).length}件）
+            </ThemedText>
+            {[...DIARY_HISTORY]
+              .filter((d) => d.saved)
+              .sort((a, b) => b.date.localeCompare(a.date))
+              .map((diary) => (
+                <TouchableOpacity
+                  key={diary.date}
+                  onPress={() => router.push(`/diary/${diary.date}`)}
+                  activeOpacity={0.8}
+                >
+                  <ThemedView type="backgroundElement" style={styles.diaryCard}>
+                    <View style={styles.diaryRow}>
+                      <View style={styles.diaryContent}>
+                        <ThemedText type="smallBold">{diary.date}</ThemedText>
+                        <ThemedText type="small" themeColor="textSecondary">{diary.context.summary}</ThemedText>
+                        <ThemedText type="small" themeColor="textSecondary" numberOfLines={2}>
+                          {diary.context.diary_text}
+                        </ThemedText>
+                      </View>
+                      <View style={[styles.statusPill, { backgroundColor: '#34C759' }]}>
+                        <ThemedText type="small" style={{ color: '#fff' }}>確定済み</ThemedText>
+                      </View>
                     </View>
-                    <View style={[styles.statusPill, { backgroundColor: '#34C759' }]}>
-                      <ThemedText type="small" style={{ color: '#fff' }}>確定済み</ThemedText>
-                    </View>
-                  </View>
-                </ThemedView>
-              </TouchableOpacity>
-            ))}
+                  </ThemedView>
+                </TouchableOpacity>
+              ))}
           </View>
 
           <View style={styles.lastSection} />
