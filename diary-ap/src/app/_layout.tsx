@@ -20,6 +20,9 @@ export default function RootLayout() {
         {/* 過去の日記詳細・編集（日付別） */}
         <Stack.Screen name="diary/[date]" options={{ title: '日記' }} />
 
+        {/* LINEチャット（友達別） */}
+        <Stack.Screen name="line-chat/[friendId]" options={{ title: 'トーク' }} />
+
         {/* 設定 */}
         <Stack.Screen name="settings" options={{ title: '設定' }} />
       </Stack>

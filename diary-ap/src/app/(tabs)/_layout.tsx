@@ -50,6 +50,20 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="line"
+        options={{
+          title: 'LINE',
+          tabBarIcon: () => <TabIcon emoji="💬" />,
+        }}
+      />
+      <Tabs.Screen
+        name="browser"
+        options={{
+          title: 'ブラウザ',
+          tabBarIcon: () => <TabIcon emoji="🌐" />,
+        }}
+      />
+      <Tabs.Screen
         name="ai-chat"
         options={{
           title: 'AI',
