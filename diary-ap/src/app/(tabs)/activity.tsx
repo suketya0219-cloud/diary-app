@@ -8,7 +8,14 @@ import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { activityStore } from '@/store/activities';
+import { MOCK_INSIGHTS } from '@/mock/ai-insights';
 import type { Activity } from '@/types/events';
+
+const INSIGHT_COLOR: Record<string, string> = {
+  pattern: '#10B981',
+  insight: '#3B82F6',
+  suggestion: '#F59E0B',
+};
 
 function formatTime(iso: string) {
   const d = new Date(iso);
@@ -46,6 +53,18 @@ export default function ActivityScreen() {
           <View style={styles.header}>
             <ThemedText type="subtitle">今日の出来事</ThemedText>
           </View>
+
+          {/* AIインサイトカード */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.insightStrip} contentContainerStyle={styles.insightContent}>
+            {MOCK_INSIGHTS.slice(0, 4).map((insight) => (
+              <ThemedView key={insight.id} type="backgroundElement" style={styles.insightCard}>
+                <View style={[styles.insightDot, { backgroundColor: INSIGHT_COLOR[insight.type] }]} />
+                <ThemedText style={styles.insightEmoji}>{insight.emoji}</ThemedText>
+                <ThemedText type="small" style={styles.insightText}>{insight.text}</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary" style={styles.insightDate}>{insight.detectedAt}</ThemedText>
+              </ThemedView>
+            ))}
+          </ScrollView>
 
           {/* 写真ストリップ（モック） */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photoStrip}>
@@ -137,6 +156,29 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.four,
     paddingBottom: Spacing.two,
   },
+  insightStrip: {
+    paddingLeft: Spacing.four,
+    marginBottom: Spacing.three,
+    flexGrow: 0,
+  },
+  insightContent: {
+    gap: Spacing.two,
+    paddingRight: Spacing.four,
+  },
+  insightCard: {
+    width: 180,
+    padding: Spacing.three,
+    borderRadius: Spacing.two,
+    gap: Spacing.one,
+  },
+  insightDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  insightEmoji: { fontSize: 20 },
+  insightText: { lineHeight: 18 },
+  insightDate: { fontSize: 10, marginTop: 2 },
   photoStrip: {
     paddingLeft: Spacing.four,
     marginBottom: Spacing.three,

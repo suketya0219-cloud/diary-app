@@ -1,6 +1,6 @@
 import { useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -9,6 +9,7 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { DIARY_HISTORY } from '@/mock/diary-history';
 import { BROWSER_HISTORY_MOCK } from '@/mock/browser';
+import { MOCK_SAVED_ANALYSES, type SavedAnalysis } from '@/mock/ai-insights';
 import { chat } from '@/services/gemini';
 
 type ContentType = 'fortune' | 'data' | 'personality';
@@ -45,28 +46,38 @@ const CONFIG: Record<ContentType, { emoji: string; title: string; buildPrompt: (
       const actCount = activities.reduce<Record<string, number>>((acc, a) => { acc[a] = (acc[a] || 0) + 1; return acc; }, {});
       const moods = DIARY_HISTORY.map((d) => d.context.mood);
       const moodCount = moods.reduce<Record<string, number>>((acc, m) => { acc[m] = (acc[m] || 0) + 1; return acc; }, {});
-      const people = DIARY_HISTORY.flatMap((d) => d.context.with_people);
       const socialDays = DIARY_HISTORY.filter((d) => d.context.with_people.length > 0).length;
       return `以下は1ヶ月分の行動データのサマリーです。\n\n活動頻度: ${Object.entries(actCount).map(([k,v])=>`${k}${v}回`).join('、')}\n気分の内訳: ${Object.entries(moodCount).map(([k,v])=>`${k}${v}日`).join('、')}\n社交的な日数: ${socialDays}日/30日\n\n上記から、このユーザーの性格タイプを分析してください。\n\n## 出力形式\n- 性格タイプ名（独自の名前をつける）\n- タイプの特徴（3つの特徴を箇条書き）\n- 強み\n- 気をつけるポイント\n- このタイプへのメッセージ\n\n合計350文字以内、温かみのあるトーンで`;
     },
   },
 };
 
+// セッション中の再分析結果を保持
+const sessionCache: Partial<Record<ContentType, { result: string; analyzedAt: string }>> = {};
+
 export default function AIContentScreen() {
   const { type } = useLocalSearchParams<{ type: string }>();
   const theme = useTheme();
   const config = CONFIG[type as ContentType];
-  const [isLoading, setIsLoading] = useState(true);
-  const [result, setResult] = useState('');
 
-  useEffect(() => {
+  const saved = MOCK_SAVED_ANALYSES.find((a) => a.type === type) as SavedAnalysis | undefined;
+  const cached = sessionCache[type as ContentType];
+  const latest = cached ?? saved;
+
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [current, setCurrent] = useState<{ result: string; analyzedAt: string } | undefined>(latest);
+
+  const handleReanalyze = async () => {
     if (!config) return;
+    setIsAnalyzing(true);
     const prompt = config.buildPrompt();
-    chat([], prompt).then((res) => {
-      setResult(res);
-      setIsLoading(false);
-    });
-  }, [type]);
+    const result = await chat([], prompt);
+    const now = new Date().toISOString().slice(0, 10);
+    const next = { result, analyzedAt: now };
+    sessionCache[type as ContentType] = next;
+    setCurrent(next);
+    setIsAnalyzing(false);
+  };
 
   if (!config) {
     return (
@@ -79,23 +90,51 @@ export default function AIContentScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['bottom']}>
-        {isLoading ? (
-          <View style={styles.loading}>
-            <ThemedText style={styles.loadingEmoji}>{config.emoji}</ThemedText>
-            <ActivityIndicator size="large" color={theme.text} />
-            <ThemedText type="small" themeColor="textSecondary" style={styles.loadingText}>
-              データを分析しています...
-            </ThemedText>
-          </View>
-        ) : (
-          <ScrollView contentContainerStyle={styles.content}>
+        <ScrollView contentContainerStyle={styles.content}>
+
+          {/* 結果カード */}
+          {current ? (
             <ThemedView type="backgroundElement" style={styles.card}>
               <ThemedText style={styles.cardEmoji}>{config.emoji}</ThemedText>
-              <ThemedText type="smallBold" style={styles.cardTitle}>{config.title}</ThemedText>
-              <ThemedText style={styles.result}>{result}</ThemedText>
+              <View style={styles.cardHeader}>
+                <ThemedText type="smallBold" style={styles.cardTitle}>{config.title}</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">{current.analyzedAt} 分析</ThemedText>
+              </View>
+              <ThemedText style={styles.result}>{current.result}</ThemedText>
             </ThemedView>
-          </ScrollView>
-        )}
+          ) : (
+            <ThemedView type="backgroundElement" style={styles.emptyCard}>
+              <ThemedText style={styles.cardEmoji}>{config.emoji}</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">まだ分析結果がありません</ThemedText>
+            </ThemedView>
+          )}
+
+          {/* 再分析ボタン */}
+          <TouchableOpacity
+            style={[styles.reanalyzeButton, { backgroundColor: theme.text }, isAnalyzing && styles.reanalyzeButtonDisabled]}
+            onPress={handleReanalyze}
+            activeOpacity={0.8}
+            disabled={isAnalyzing}
+          >
+            {isAnalyzing ? (
+              <View style={styles.buttonInner}>
+                <ActivityIndicator size="small" color={theme.background} />
+                <ThemedText style={[styles.reanalyzeText, { color: theme.background }]}>分析中...</ThemedText>
+              </View>
+            ) : (
+              <ThemedText style={[styles.reanalyzeText, { color: theme.background }]}>
+                🔄 再分析する
+              </ThemedText>
+            )}
+          </TouchableOpacity>
+
+          {current && cached && (
+            <ThemedText type="small" themeColor="textSecondary" style={styles.updateNote}>
+              ※ 今回新たに分析した結果を表示中
+            </ThemedText>
+          )}
+
+        </ScrollView>
       </SafeAreaView>
     </ThemedView>
   );
@@ -108,21 +147,35 @@ export function generateStaticParams() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   safeArea: { flex: 1 },
-  loading: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.three,
-  },
-  loadingEmoji: { fontSize: 48 },
-  loadingText: { marginTop: Spacing.one },
-  content: { padding: Spacing.four },
+  content: { padding: Spacing.four, gap: Spacing.three },
   card: {
     padding: Spacing.four,
     borderRadius: Spacing.three,
     gap: Spacing.two,
   },
-  cardEmoji: { fontSize: 40 },
-  cardTitle: { fontSize: 18 },
+  emptyCard: {
+    padding: Spacing.four,
+    borderRadius: Spacing.three,
+    alignItems: 'center',
+    gap: Spacing.two,
+    minHeight: 150,
+    justifyContent: 'center',
+  },
+  cardEmoji: { fontSize: 36 },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  cardTitle: { fontSize: 16 },
   result: { fontSize: 15, lineHeight: 26 },
+  reanalyzeButton: {
+    padding: Spacing.three,
+    borderRadius: Spacing.two,
+    alignItems: 'center',
+  },
+  reanalyzeButtonDisabled: { opacity: 0.6 },
+  buttonInner: { flexDirection: 'row', gap: Spacing.two, alignItems: 'center' },
+  reanalyzeText: { fontSize: 15, fontWeight: '600' },
+  updateNote: { textAlign: 'center' },
 });
