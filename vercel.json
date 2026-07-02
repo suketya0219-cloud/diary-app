@@ -1,5 +1,5 @@
 {
-  "buildCommand": "cd diary-ap && npm install && npx expo export --platform web",
-  "outputDirectory": "diary-ap/dist",
+  "buildCommand": "npm install && npx expo export --platform web",
+  "outputDirectory": "dist",
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }
