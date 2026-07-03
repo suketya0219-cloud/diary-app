@@ -3,12 +3,14 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Card } from '@/components/card';
+import { GradientButton } from '@/components/gradient-button';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { Radius, Shadow, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { activityStore } from '@/store/activities';
 import { MOCK_INSIGHTS } from '@/mock/ai-insights';
+import { activityStore } from '@/store/activities';
 import type { Activity } from '@/types/events';
 
 const INSIGHT_COLOR: Record<string, string> = {
@@ -57,32 +59,31 @@ export default function ActivityScreen() {
           {/* AIインサイトカード */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.insightStrip} contentContainerStyle={styles.insightContent}>
             {MOCK_INSIGHTS.slice(0, 4).map((insight) => (
-              <ThemedView key={insight.id} type="backgroundElement" style={styles.insightCard}>
-                <View style={[styles.insightDot, { backgroundColor: INSIGHT_COLOR[insight.type] }]} />
+              <View key={insight.id} style={[styles.insightCard, Shadow.card, { borderLeftColor: INSIGHT_COLOR[insight.type] }]}>
                 <ThemedText style={styles.insightEmoji}>{insight.emoji}</ThemedText>
                 <ThemedText type="small" style={styles.insightText}>{insight.text}</ThemedText>
                 <ThemedText type="small" themeColor="textSecondary" style={styles.insightDate}>{insight.detectedAt}</ThemedText>
-              </ThemedView>
+              </View>
             ))}
           </ScrollView>
 
           {/* 写真ストリップ（モック） */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photoStrip}>
             {['写真1', '写真2', '写真3'].map((label) => (
-              <ThemedView key={label} type="backgroundElement" style={styles.photo}>
+              <Card key={label} style={styles.photo}>
                 <ThemedText type="small" themeColor="textSecondary">📷</ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">{label}</ThemedText>
-              </ThemedView>
+              </Card>
             ))}
           </ScrollView>
 
           {/* 件数サマリー */}
-          <ThemedView type="backgroundElement" style={styles.summary}>
+          <Card style={styles.summary}>
             <ThemedText type="smallBold">日記に含める出来事: {includedCount}件</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
               各項目をタップして日記への反映を切り替えられます。
             </ThemedText>
-          </ThemedView>
+          </Card>
 
           {/* タイムライン */}
           <View style={styles.timeline}>
@@ -90,56 +91,42 @@ export default function ActivityScreen() {
               <View key={item.id} style={styles.timelineItem}>
                 <View style={styles.timeColumn}>
                   <ThemedText type="small" themeColor="textSecondary">{formatTime(item.occurredAt)}</ThemedText>
-                  <View style={[styles.timelineDot, { backgroundColor: item.includedInDiary ? theme.text : theme.backgroundElement }]} />
+                  <View style={[styles.timelineDot, { backgroundColor: item.includedInDiary ? '#2D8A5E' : '#D4F0E4' }]} />
                 </View>
-                <ThemedView type="backgroundElement" style={styles.card}>
+                <Card style={styles.card}>
                   <View style={styles.cardRow}>
                     <ThemedText style={styles.typeEmoji}>{TYPE_EMOJI[item.type] ?? '•'}</ThemedText>
                     <View style={styles.cardContent}>
                       <ThemedText type="smallBold">{item.title}</ThemedText>
                       <ThemedText type="small" themeColor="textSecondary">
-                        {item.category}{item.location ? ` / ${item.location}` : ''} / 信頼度 {Math.round(item.confidence * 100)}%
+                        {item.category}{item.location ? ` · ${item.location}` : ''} · 信頼度 {Math.round(item.confidence * 100)}%
                       </ThemedText>
                     </View>
-                    <View style={[
-                      styles.includePill,
-                      { backgroundColor: item.includedInDiary ? '#34C759' : theme.backgroundSelected }
-                    ]}>
-                      <ThemedText
-                        type="small"
-                        style={{ color: item.includedInDiary ? '#fff' : undefined }}
-                      >
+                    <View style={[styles.includePill, { backgroundColor: item.includedInDiary ? '#2D8A5E' : '#F0FAF4', borderColor: item.includedInDiary ? '#2D8A5E' : '#D4F0E4' }]}>
+                      <ThemedText style={[styles.pillText, { color: item.includedInDiary ? '#fff' : '#5A8C72' }]}>
                         {item.includedInDiary ? '含める' : '除外'}
                       </ThemedText>
                     </View>
                   </View>
-                  <View style={styles.actions}>
-                    <TouchableOpacity
-                      style={[styles.actionButton, { backgroundColor: theme.backgroundSelected }]}
-                      onPress={() => toggleActivity(item.id)}
-                      activeOpacity={0.8}
-                    >
-                      <ThemedText type="small">
-                        {item.includedInDiary ? '日記から除外' : '日記へ含める'}
-                      </ThemedText>
-                    </TouchableOpacity>
-                  </View>
-                </ThemedView>
+                  <TouchableOpacity
+                    style={[styles.actionButton, { borderColor: '#E8F5EE' }]}
+                    onPress={() => toggleActivity(item.id)}
+                    activeOpacity={0.8}
+                  >
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {item.includedInDiary ? '日記から除外する' : '日記へ含める'}
+                    </ThemedText>
+                  </TouchableOpacity>
+                </Card>
               </View>
             ))}
           </View>
 
           {/* 日記ドラフト生成ボタン */}
           <View style={styles.footer}>
-            <TouchableOpacity
-              style={[styles.primaryButton, { backgroundColor: theme.text }]}
-              onPress={() => router.push('/diary-confirm')}
-              activeOpacity={0.8}
-            >
-              <ThemedText style={[styles.primaryButtonText, { color: theme.background }]}>
-                日記ドラフトを生成
-              </ThemedText>
-            </TouchableOpacity>
+            <GradientButton onPress={() => router.push('/diary-confirm')}>
+              <ThemedText style={styles.primaryButtonText}>日記ドラフトを生成</ThemedText>
+            </GradientButton>
           </View>
 
         </ScrollView>
@@ -156,37 +143,25 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.four,
     paddingBottom: Spacing.two,
   },
-  insightStrip: {
-    paddingLeft: Spacing.four,
-    marginBottom: Spacing.three,
-    flexGrow: 0,
-  },
-  insightContent: {
-    gap: Spacing.two,
-    paddingRight: Spacing.four,
-  },
+  insightStrip: { paddingLeft: Spacing.four, marginBottom: Spacing.three, flexGrow: 0 },
+  insightContent: { gap: Spacing.two, paddingRight: Spacing.four },
   insightCard: {
     width: 180,
     padding: Spacing.three,
-    borderRadius: Spacing.two,
+    borderRadius: Radius.md,
     gap: Spacing.one,
-  },
-  insightDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#E8F5EE',
+    borderLeftWidth: 4,
   },
   insightEmoji: { fontSize: 20 },
   insightText: { lineHeight: 18 },
   insightDate: { fontSize: 10, marginTop: 2 },
-  photoStrip: {
-    paddingLeft: Spacing.four,
-    marginBottom: Spacing.three,
-  },
+  photoStrip: { paddingLeft: Spacing.four, marginBottom: Spacing.three },
   photo: {
     width: 80,
     height: 80,
-    borderRadius: Spacing.two,
     marginRight: Spacing.two,
     alignItems: 'center',
     justifyContent: 'center',
@@ -195,73 +170,30 @@ const styles = StyleSheet.create({
   summary: {
     marginHorizontal: Spacing.four,
     padding: Spacing.three,
-    borderRadius: Spacing.two,
     gap: Spacing.half,
     marginBottom: Spacing.three,
   },
-  timeline: {
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.two,
-  },
-  timelineItem: {
-    flexDirection: 'row',
-    gap: Spacing.two,
-  },
-  timeColumn: {
-    width: 44,
-    alignItems: 'center',
-    paddingTop: Spacing.two,
-    gap: Spacing.one,
-  },
-  timelineDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  card: {
-    flex: 1,
-    padding: Spacing.three,
-    borderRadius: Spacing.two,
-    gap: Spacing.two,
-  },
-  cardRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: Spacing.two,
-  },
-  typeEmoji: {
-    fontSize: 20,
-    paddingTop: 2,
-  },
-  cardContent: {
-    flex: 1,
-    gap: Spacing.half,
-  },
+  timeline: { paddingHorizontal: Spacing.four, gap: Spacing.two },
+  timelineItem: { flexDirection: 'row', gap: Spacing.two },
+  timeColumn: { width: 44, alignItems: 'center', paddingTop: Spacing.two, gap: Spacing.one },
+  timelineDot: { width: 8, height: 8, borderRadius: 4 },
+  card: { flex: 1, padding: Spacing.three, gap: Spacing.two },
+  cardRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.two },
+  typeEmoji: { fontSize: 20, paddingTop: 2 },
+  cardContent: { flex: 1, gap: 2 },
   includePill: {
     paddingHorizontal: Spacing.two,
-    paddingVertical: Spacing.half,
-    borderRadius: Spacing.one,
+    paddingVertical: 3,
+    borderRadius: Radius.pill,
+    borderWidth: 1,
   },
-  actions: {
-    flexDirection: 'row',
-    gap: Spacing.two,
-  },
+  pillText: { fontSize: 11, fontWeight: '600' },
   actionButton: {
-    paddingHorizontal: Spacing.two,
-    paddingVertical: Spacing.one,
-    borderRadius: Spacing.one,
-  },
-  footer: {
-    padding: Spacing.four,
-    paddingBottom: Spacing.six,
-  },
-  primaryButton: {
-    padding: Spacing.three,
-    borderRadius: Spacing.two,
+    paddingVertical: 8,
+    borderRadius: Radius.sm,
     alignItems: 'center',
+    borderWidth: 1,
   },
-  primaryButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
+  footer: { padding: Spacing.four, paddingBottom: Spacing.six },
+  primaryButtonText: { color: '#fff', fontSize: 15, fontWeight: '700' },
 });

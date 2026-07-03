@@ -1,12 +1,13 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Card } from '@/components/card';
+import { GradientButton } from '@/components/gradient-button';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { Radius, Spacing } from '@/constants/theme';
 import { DIARY_HISTORY } from '@/mock/diary-history';
 import { BROWSER_HISTORY_MOCK } from '@/mock/browser';
 import { MOCK_SAVED_ANALYSES, type SavedAnalysis } from '@/mock/ai-insights';
@@ -57,7 +58,6 @@ const sessionCache: Partial<Record<ContentType, { result: string; analyzedAt: st
 
 export default function AIContentScreen() {
   const { type } = useLocalSearchParams<{ type: string }>();
-  const theme = useTheme();
   const config = CONFIG[type as ContentType];
 
   const saved = MOCK_SAVED_ANALYSES.find((a) => a.type === type) as SavedAnalysis | undefined;
@@ -94,39 +94,32 @@ export default function AIContentScreen() {
 
           {/* 結果カード */}
           {current ? (
-            <ThemedView type="backgroundElement" style={styles.card}>
+            <Card variant="elevated" style={styles.card}>
               <ThemedText style={styles.cardEmoji}>{config.emoji}</ThemedText>
               <View style={styles.cardHeader}>
                 <ThemedText type="smallBold" style={styles.cardTitle}>{config.title}</ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">{current.analyzedAt} 分析</ThemedText>
               </View>
               <ThemedText style={styles.result}>{current.result}</ThemedText>
-            </ThemedView>
+            </Card>
           ) : (
-            <ThemedView type="backgroundElement" style={styles.emptyCard}>
+            <Card style={styles.emptyCard}>
               <ThemedText style={styles.cardEmoji}>{config.emoji}</ThemedText>
               <ThemedText type="small" themeColor="textSecondary">まだ分析結果がありません</ThemedText>
-            </ThemedView>
+            </Card>
           )}
 
           {/* 再分析ボタン */}
-          <TouchableOpacity
-            style={[styles.reanalyzeButton, { backgroundColor: theme.text }, isAnalyzing && styles.reanalyzeButtonDisabled]}
-            onPress={handleReanalyze}
-            activeOpacity={0.8}
-            disabled={isAnalyzing}
-          >
+          <GradientButton onPress={handleReanalyze} disabled={isAnalyzing} style={isAnalyzing ? styles.buttonDisabled : undefined}>
             {isAnalyzing ? (
               <View style={styles.buttonInner}>
-                <ActivityIndicator size="small" color={theme.background} />
-                <ThemedText style={[styles.reanalyzeText, { color: theme.background }]}>分析中...</ThemedText>
+                <ActivityIndicator size="small" color="#fff" />
+                <ThemedText style={styles.reanalyzeText}>分析中...</ThemedText>
               </View>
             ) : (
-              <ThemedText style={[styles.reanalyzeText, { color: theme.background }]}>
-                🔄 再分析する
-              </ThemedText>
+              <ThemedText style={styles.reanalyzeText}>🔄 再分析する</ThemedText>
             )}
-          </TouchableOpacity>
+          </GradientButton>
 
           {current && cached && (
             <ThemedText type="small" themeColor="textSecondary" style={styles.updateNote}>
@@ -148,34 +141,20 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   safeArea: { flex: 1 },
   content: { padding: Spacing.four, gap: Spacing.three },
-  card: {
-    padding: Spacing.four,
-    borderRadius: Spacing.three,
-    gap: Spacing.two,
-  },
+  card: { padding: Spacing.four, gap: Spacing.two },
   emptyCard: {
     padding: Spacing.four,
-    borderRadius: Spacing.three,
     alignItems: 'center',
     gap: Spacing.two,
     minHeight: 150,
     justifyContent: 'center',
   },
   cardEmoji: { fontSize: 36 },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   cardTitle: { fontSize: 16 },
   result: { fontSize: 15, lineHeight: 26 },
-  reanalyzeButton: {
-    padding: Spacing.three,
-    borderRadius: Spacing.two,
-    alignItems: 'center',
-  },
-  reanalyzeButtonDisabled: { opacity: 0.6 },
+  buttonDisabled: { opacity: 0.6 },
   buttonInner: { flexDirection: 'row', gap: Spacing.two, alignItems: 'center' },
-  reanalyzeText: { fontSize: 15, fontWeight: '600' },
+  reanalyzeText: { color: '#fff', fontSize: 15, fontWeight: '700' },
   updateNote: { textAlign: 'center' },
 });

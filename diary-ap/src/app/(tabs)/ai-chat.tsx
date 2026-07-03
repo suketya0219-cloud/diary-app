@@ -1,11 +1,11 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { Radius, Shadow, Spacing } from '@/constants/theme';
 
 const AI_MENU = [
   {
@@ -14,6 +14,7 @@ const AI_MENU = [
     title: '会話',
     description: 'AIと自由に話す',
     route: '/ai-chat-screen',
+    colors: ['#2D8A5E', '#1A4731'] as const,
   },
   {
     key: 'fortune',
@@ -21,6 +22,7 @@ const AI_MENU = [
     title: '占い',
     description: '行動データから今日の運勢を診断',
     route: '/ai-content/fortune',
+    colors: ['#7C3AED', '#4C1D95'] as const,
   },
   {
     key: 'data',
@@ -28,6 +30,7 @@ const AI_MENU = [
     title: 'データ分析',
     description: '1ヶ月の行動パターンを可視化',
     route: '/ai-content/data',
+    colors: ['#1D4ED8', '#1E3A8A'] as const,
   },
   {
     key: 'personality',
@@ -35,12 +38,11 @@ const AI_MENU = [
     title: '性格診断',
     description: '行動傾向から性格タイプを分析',
     route: '/ai-content/personality',
+    colors: ['#B45309', '#78350F'] as const,
   },
 ] as const;
 
 export default function AIMenuScreen() {
-  const theme = useTheme();
-
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
@@ -59,15 +61,18 @@ export default function AIMenuScreen() {
                 key={item.key}
                 style={styles.cardWrapper}
                 onPress={() => router.push(item.route as any)}
-                activeOpacity={0.8}
+                activeOpacity={0.85}
               >
-                <ThemedView type="backgroundElement" style={styles.card}>
+                <LinearGradient
+                  colors={item.colors}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.card}
+                >
                   <ThemedText style={styles.emoji}>{item.emoji}</ThemedText>
-                  <ThemedText type="smallBold">{item.title}</ThemedText>
-                  <ThemedText type="small" themeColor="textSecondary" style={styles.desc}>
-                    {item.description}
-                  </ThemedText>
-                </ThemedView>
+                  <ThemedText style={styles.cardTitle}>{item.title}</ThemedText>
+                  <ThemedText style={styles.desc}>{item.description}</ThemedText>
+                </LinearGradient>
               </TouchableOpacity>
             ))}
           </View>
@@ -83,18 +88,20 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   content: { padding: Spacing.four, gap: Spacing.four },
   header: { gap: Spacing.one },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.three,
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.three },
+  cardWrapper: {
+    width: '47%',
+    borderRadius: Radius.md,
+    overflow: 'hidden',
+    ...Shadow.strong,
   },
-  cardWrapper: { width: '47%' },
   card: {
     padding: Spacing.three,
-    borderRadius: Spacing.three,
     gap: Spacing.one,
-    minHeight: 130,
+    minHeight: 140,
+    justifyContent: 'flex-end',
   },
-  emoji: { fontSize: 32, marginBottom: Spacing.one },
-  desc: { marginTop: 2, lineHeight: 18 },
+  emoji: { fontSize: 36, marginBottom: Spacing.one },
+  cardTitle: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  desc: { color: 'rgba(255,255,255,0.75)', fontSize: 12, lineHeight: 17 },
 });
