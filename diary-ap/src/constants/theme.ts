@@ -9,19 +9,25 @@ import { Platform } from 'react-native';
 
 export const Colors = {
   light: {
-    text: '#0D0D0D',
-    background: '#FFFFFF',
-    backgroundElement: '#F5F5F5',
-    backgroundSelected: '#E8E8E8',
-    textSecondary: '#888888',
+    text: '#1A1A1A',
+    background: '#FBF8F3',
+    backgroundElement: '#F2EDE5',
+    backgroundSelected: '#E8E0D5',
+    textSecondary: '#999999',
   },
   dark: {
-    text: '#0D0D0D',
-    background: '#FFFFFF',
-    backgroundElement: '#F5F5F5',
-    backgroundSelected: '#E8E8E8',
-    textSecondary: '#888888',
+    text: '#1A1A1A',
+    background: '#FBF8F3',
+    backgroundElement: '#F2EDE5',
+    backgroundSelected: '#E8E0D5',
+    textSecondary: '#999999',
   },
+} as const;
+
+// ポイントカラー（白黒以外のアクセント）
+export const Accent = {
+  red: '#E84040',    // タイトル・強調・今日
+  green: '#3DB870',  // ライン・進捗・完了
 } as const;
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;

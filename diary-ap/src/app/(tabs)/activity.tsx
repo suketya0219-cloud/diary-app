@@ -7,15 +7,15 @@ import { Card } from '@/components/card';
 import { GradientButton } from '@/components/gradient-button';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Radius, Shadow, Spacing } from '@/constants/theme';
+import { Accent, Radius, Shadow, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { MOCK_INSIGHTS } from '@/mock/ai-insights';
 import { activityStore } from '@/store/activities';
 import type { Activity } from '@/types/events';
 
 const INSIGHT_COLOR: Record<string, string> = {
-  pattern: '#0D0D0D',
-  insight: '#555555',
+  pattern: Accent.green,
+  insight: Accent.red,
   suggestion: '#888888',
 };
 
@@ -91,7 +91,7 @@ export default function ActivityScreen() {
               <View key={item.id} style={styles.timelineItem}>
                 <View style={styles.timeColumn}>
                   <ThemedText type="small" themeColor="textSecondary">{formatTime(item.occurredAt)}</ThemedText>
-                  <View style={[styles.timelineDot, { backgroundColor: item.includedInDiary ? '#0D0D0D' : '#E0E0E0' }]} />
+                  <View style={[styles.timelineDot, { backgroundColor: item.includedInDiary ? Accent.green : '#E0E0E0' }]} />
                 </View>
                 <Card style={styles.card}>
                   <View style={styles.cardRow}>
@@ -102,7 +102,7 @@ export default function ActivityScreen() {
                         {item.category}{item.location ? ` · ${item.location}` : ''} · 信頼度 {Math.round(item.confidence * 100)}%
                       </ThemedText>
                     </View>
-                    <View style={[styles.includePill, { backgroundColor: item.includedInDiary ? '#0D0D0D' : '#F5F5F5', borderColor: item.includedInDiary ? '#0D0D0D' : '#E0E0E0' }]}>
+                    <View style={[styles.includePill, { backgroundColor: item.includedInDiary ? Accent.green : '#F5F5F5', borderColor: item.includedInDiary ? Accent.green : '#E0E0E0' }]}>
                       <ThemedText style={[styles.pillText, { color: item.includedInDiary ? '#fff' : '#5A8C72' }]}>
                         {item.includedInDiary ? '含める' : '除外'}
                       </ThemedText>

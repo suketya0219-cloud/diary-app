@@ -8,10 +8,10 @@ export function Card({ style, variant = 'default', ...props }: CardProps) {
     <View
       style={[
         {
-          backgroundColor: '#FFFFFF',
+          backgroundColor: '#FFFCF8',
           borderRadius: Radius.md,
           borderWidth: 1,
-          borderColor: '#E8E8E8',
+          borderColor: '#EDE8E0',
           ...(variant === 'elevated' ? Shadow.strong : Shadow.card),
         },
         style,

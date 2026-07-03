@@ -7,7 +7,7 @@ import { Card } from '@/components/card';
 import { GradientButton } from '@/components/gradient-button';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Radius, Shadow, Spacing } from '@/constants/theme';
+import { Accent, Radius, Shadow, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { MOCK_ACTIVITIES, MOCK_EVENTS, TODAY, getUserById } from '@/mock/events';
 
@@ -45,7 +45,9 @@ export default function HomeScreen() {
           <View style={styles.header}>
             <View>
               <ThemedText type="small" themeColor="textSecondary">{dateLabel}</ThemedText>
-              <ThemedText type="subtitle" style={styles.greeting}>おはよう、田村さん</ThemedText>
+              <ThemedText type="subtitle" style={styles.greeting}>
+                <ThemedText type="subtitle" style={{ color: Accent.red }}>おはよう</ThemedText>、田村さん
+              </ThemedText>
             </View>
             <TouchableOpacity onPress={() => router.push('/settings')} activeOpacity={0.7} style={styles.settingsButton}>
               <ThemedText style={styles.settingsIcon}>⚙️</ThemedText>
@@ -75,7 +77,10 @@ export default function HomeScreen() {
           {/* 今日の予定 */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <ThemedText type="smallBold">今日の予定</ThemedText>
+              <View>
+                <ThemedText type="smallBold">今日の予定</ThemedText>
+                <View style={[styles.sectionLine, { backgroundColor: Accent.green }]} />
+              </View>
               <TouchableOpacity onPress={() => router.push('/events' as any)}>
                 <ThemedText type="small" themeColor="textSecondary">すべて →</ThemedText>
               </TouchableOpacity>
@@ -93,7 +98,7 @@ export default function HomeScreen() {
                 >
                   <Card style={styles.eventCard}>
                     <View style={styles.eventRow}>
-                      <View style={[styles.eventDot, { backgroundColor: '#0D0D0D' }]} />
+                      <View style={[styles.eventDot, { backgroundColor: Accent.green }]} />
                       <View style={styles.eventContent}>
                         <ThemedText type="smallBold">{event.title}</ThemedText>
                         <ThemedText type="small" themeColor="textSecondary">
@@ -117,7 +122,10 @@ export default function HomeScreen() {
 
           {/* 日記の作成状況 */}
           <View style={[styles.section, styles.lastSection]}>
-            <ThemedText type="smallBold">日記の作成状況</ThemedText>
+            <View style={styles.sectionTitleWrap}>
+              <ThemedText type="smallBold">日記の作成状況</ThemedText>
+              <View style={[styles.sectionLine, { backgroundColor: Accent.red }]} />
+            </View>
             <Card variant="elevated" style={styles.diaryCard}>
               <View style={styles.diaryCardHeader}>
                 <ThemedText style={styles.diaryEmoji}>📖</ThemedText>
@@ -166,7 +174,9 @@ const styles = StyleSheet.create({
   settingsIcon: { fontSize: 20 },
   section: { paddingHorizontal: Spacing.four, marginTop: Spacing.three, gap: Spacing.two },
   lastSection: { marginBottom: Spacing.six },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  sectionTitleWrap: { gap: 3 },
+  sectionLine: { height: 2, width: 28, borderRadius: 1 },
   summaryBanner: {
     borderRadius: Radius.md,
     padding: Spacing.four,
