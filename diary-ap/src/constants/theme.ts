@@ -9,18 +9,18 @@ import { Platform } from 'react-native';
 
 export const Colors = {
   light: {
-    text: '#1A4731',
+    text: '#0D0D0D',
     background: '#FFFFFF',
-    backgroundElement: '#F0FAF4',
-    backgroundSelected: '#D4F0E4',
-    textSecondary: '#5A8C72',
+    backgroundElement: '#F5F5F5',
+    backgroundSelected: '#E8E8E8',
+    textSecondary: '#888888',
   },
   dark: {
-    text: '#1A4731',
+    text: '#0D0D0D',
     background: '#FFFFFF',
-    backgroundElement: '#F0FAF4',
-    backgroundSelected: '#D4F0E4',
-    textSecondary: '#5A8C72',
+    backgroundElement: '#F5F5F5',
+    backgroundSelected: '#E8E8E8',
+    textSecondary: '#888888',
   },
 } as const;
 
@@ -66,15 +66,15 @@ export const MaxContentWidth = 800;
 
 export const Shadow = {
   card: Platform.select({
-    ios: { shadowColor: '#1A4731', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 12 },
-    android: { elevation: 3 },
-    web: { boxShadow: '0 2px 12px rgba(26,71,49,0.08)' } as any,
+    ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 8 },
+    android: { elevation: 2 },
+    web: { boxShadow: '0 1px 8px rgba(0,0,0,0.06)' } as any,
     default: {},
   }) ?? {},
   strong: Platform.select({
-    ios: { shadowColor: '#1A4731', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.14, shadowRadius: 20 },
-    android: { elevation: 6 },
-    web: { boxShadow: '0 4px 20px rgba(26,71,49,0.14)' } as any,
+    ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 20 },
+    android: { elevation: 5 },
+    web: { boxShadow: '0 4px 20px rgba(0,0,0,0.12)' } as any,
     default: {},
   }) ?? {},
 };

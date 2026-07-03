@@ -9,9 +9,9 @@ type GradientButtonProps = TouchableOpacityProps & {
 export function GradientButton({ style, children, variant = 'primary', ...props }: GradientButtonProps) {
   const isPrimary = variant === 'primary';
   return (
-    <TouchableOpacity activeOpacity={0.85} style={[styles.wrapper, Shadow.card, style]} {...props}>
+    <TouchableOpacity activeOpacity={0.8} style={[styles.wrapper, isPrimary && Shadow.card, style]} {...props}>
       <LinearGradient
-        colors={isPrimary ? ['#2D8A5E', '#1A4731'] : ['#E8F5EE', '#D4F0E4']}
+        colors={isPrimary ? ['#1A1A1A', '#3D3D3D'] : ['#F5F5F5', '#E8E8E8']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.gradient}

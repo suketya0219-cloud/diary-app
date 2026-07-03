@@ -14,7 +14,7 @@ const AI_MENU = [
     title: '会話',
     description: 'AIと自由に話す',
     route: '/ai-chat-screen',
-    colors: ['#2D8A5E', '#1A4731'] as const,
+    colors: ['#0D0D0D', '#2D2D2D'] as const,
   },
   {
     key: 'fortune',
@@ -22,7 +22,7 @@ const AI_MENU = [
     title: '占い',
     description: '行動データから今日の運勢を診断',
     route: '/ai-content/fortune',
-    colors: ['#7C3AED', '#4C1D95'] as const,
+    colors: ['#1A1A1A', '#444444'] as const,
   },
   {
     key: 'data',
@@ -30,7 +30,7 @@ const AI_MENU = [
     title: 'データ分析',
     description: '1ヶ月の行動パターンを可視化',
     route: '/ai-content/data',
-    colors: ['#1D4ED8', '#1E3A8A'] as const,
+    colors: ['#2D2D2D', '#555555'] as const,
   },
   {
     key: 'personality',
@@ -38,7 +38,7 @@ const AI_MENU = [
     title: '性格診断',
     description: '行動傾向から性格タイプを分析',
     route: '/ai-content/personality',
-    colors: ['#B45309', '#78350F'] as const,
+    colors: ['#111111', '#3A3A3A'] as const,
   },
 ] as const;
 
@@ -51,7 +51,7 @@ export default function AIMenuScreen() {
           <View style={styles.header}>
             <ThemedText type="subtitle">AI</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
-              あなたのデータをもとにAIが分析します
+              あなたのデータをもとに分析します
             </ThemedText>
           </View>
 
@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
     minHeight: 140,
     justifyContent: 'flex-end',
   },
-  emoji: { fontSize: 36, marginBottom: Spacing.one },
-  cardTitle: { color: '#fff', fontSize: 15, fontWeight: '700' },
-  desc: { color: 'rgba(255,255,255,0.75)', fontSize: 12, lineHeight: 17 },
+  emoji: { fontSize: 32, marginBottom: Spacing.one },
+  cardTitle: { color: '#fff', fontSize: 15, fontWeight: '700', letterSpacing: -0.3 },
+  desc: { color: 'rgba(255,255,255,0.6)', fontSize: 11, lineHeight: 16 },
 });

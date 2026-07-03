@@ -55,12 +55,12 @@ export default function HomeScreen() {
           {/* データサマリーバナー */}
           <View style={styles.section}>
             <LinearGradient
-              colors={['#2D8A5E', '#1A4731']}
+              colors={['#0D0D0D', '#3D3D3D']}
               start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
+              end={{ x: 1, y: 1 }}
               style={styles.summaryBanner}
             >
-              <ThemedText style={styles.summaryBannerTitle}>今日のデータ</ThemedText>
+              <ThemedText style={styles.summaryBannerTitle}>TODAY</ThemedText>
               <View style={styles.summaryGrid}>
                 {dataSummary.map((item) => (
                   <View key={item.label} style={styles.summaryItem}>
@@ -93,7 +93,7 @@ export default function HomeScreen() {
                 >
                   <Card style={styles.eventCard}>
                     <View style={styles.eventRow}>
-                      <View style={[styles.eventDot, { backgroundColor: '#2D8A5E' }]} />
+                      <View style={[styles.eventDot, { backgroundColor: '#0D0D0D' }]} />
                       <View style={styles.eventContent}>
                         <ThemedText type="smallBold">{event.title}</ThemedText>
                         <ThemedText type="small" themeColor="textSecondary">
@@ -184,12 +184,14 @@ const styles = StyleSheet.create({
   eventDot: { width: 8, height: 8, borderRadius: 4, marginTop: 5 },
   eventContent: { flex: 1, gap: 2 },
   statusBadge: {
-    backgroundColor: '#D4F0E4',
+    backgroundColor: '#F5F5F5',
     paddingHorizontal: Spacing.two,
     paddingVertical: 3,
     borderRadius: Radius.pill,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
   },
-  statusText: { fontSize: 11, color: '#2D8A5E', fontWeight: '600' },
+  statusText: { fontSize: 11, color: '#555', fontWeight: '600' },
   diaryCard: { padding: Spacing.four, gap: Spacing.three },
   diaryCardHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   diaryEmoji: { fontSize: 32 },
