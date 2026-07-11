@@ -11,7 +11,7 @@ export function GradientButton({ style, children, variant = 'primary', ...props 
   return (
     <TouchableOpacity activeOpacity={0.8} style={[styles.wrapper, isPrimary && Shadow.card, style]} {...props}>
       <LinearGradient
-        colors={isPrimary ? ['#1A1A1A', '#3D3D3D'] : ['#F5F5F5', '#E8E8E8']}
+        colors={isPrimary ? ['#F0958A', '#E84040'] : ['#F5F5F5', '#E8E8E8']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.gradient}

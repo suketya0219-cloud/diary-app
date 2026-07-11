@@ -1,24 +1,45 @@
-import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AvatarStack } from '@/components/avatar-stack';
 import { Card } from '@/components/card';
 import { GradientButton } from '@/components/gradient-button';
+import { StampBadge } from '@/components/stamp-badge';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Accent, Radius, Shadow, Spacing } from '@/constants/theme';
+import { Accent, Pastel, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { MOCK_ACTIVITIES, MOCK_EVENTS, TODAY, getUserById } from '@/mock/events';
+import type { Activity, ActivityType } from '@/types/events';
 
-function formatDateTime(iso: string) {
+function formatTime(iso: string) {
   const d = new Date(iso);
-  return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
 const MOCK_PHOTO_COUNT = 3;
 const MOCK_STEPS = 8420;
 const MOCK_PLACE_COUNT = 2;
+
+const ACTIVITY_ICON: Record<ActivityType, string> = {
+  calendar: '📅',
+  shared_event: '🤝',
+  photo: '📷',
+  health: '🏃',
+  note: '📝',
+  location: '📍',
+};
+
+type FlowItem = {
+  id: string;
+  time: string;
+  icon: string;
+  title: string;
+  subtitle?: string;
+  participantIds?: string[];
+  onPress?: () => void;
+};
 
 export default function HomeScreen() {
   const theme = useTheme();
@@ -30,11 +51,32 @@ export default function HomeScreen() {
   const includedCount = MOCK_ACTIVITIES.filter((a) => a.includedInDiary).length;
 
   const dataSummary = [
-    { emoji: '📷', label: `写真 ${MOCK_PHOTO_COUNT}枚` },
-    { emoji: '👣', label: `${MOCK_STEPS.toLocaleString()}歩` },
-    { emoji: '📍', label: `場所 ${MOCK_PLACE_COUNT}箇所` },
-    { emoji: '📅', label: `予定 ${todayEvents.length}件` },
+    { emoji: '📷', label: `写真 ${MOCK_PHOTO_COUNT}枚`, background: Pastel.butter, textColor: Pastel.butterText },
+    { emoji: '👣', label: `${MOCK_STEPS.toLocaleString()}歩`, background: Pastel.sky, textColor: Pastel.skyText },
+    { emoji: '📍', label: `場所 ${MOCK_PLACE_COUNT}箇所`, background: Pastel.mint, textColor: Pastel.mintText },
+    { emoji: '📅', label: `予定 ${todayEvents.length}件`, background: Pastel.coral, textColor: Pastel.coralText },
   ];
+
+  // 予定と出来事を時系列でひとつの「今日の流れ」にまとめる
+  const flowItems: FlowItem[] = [
+    ...todayEvents.map((event) => ({
+      id: event.id,
+      time: event.startAt,
+      icon: '📅',
+      title: event.title,
+      subtitle: event.location,
+      participantIds: event.participantIds,
+      onPress: () => router.push({ pathname: '/events/[id]' as any, params: { id: event.id } }),
+    })),
+    ...MOCK_ACTIVITIES.filter((a: Activity) => a.occurredAt.startsWith(TODAY)).map((activity) => ({
+      id: activity.id,
+      time: activity.occurredAt,
+      icon: ACTIVITY_ICON[activity.type],
+      title: activity.title,
+      subtitle: activity.location,
+      participantIds: activity.personId ? [activity.personId] : undefined,
+    })),
+  ].sort((a, b) => a.time.localeCompare(b.time));
 
   return (
     <ThemedView style={styles.container}>
@@ -54,81 +96,79 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* データサマリーバナー */}
+          {/* 今日のスタンプ */}
           <View style={styles.section}>
-            <LinearGradient
-              colors={['#0D0D0D', '#3D3D3D']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.summaryBanner}
-            >
-              <ThemedText style={styles.summaryBannerTitle}>TODAY</ThemedText>
-              <View style={styles.summaryGrid}>
-                {dataSummary.map((item) => (
-                  <View key={item.label} style={styles.summaryItem}>
-                    <ThemedText style={styles.summaryEmoji}>{item.emoji}</ThemedText>
-                    <ThemedText style={styles.summaryLabel}>{item.label}</ThemedText>
-                  </View>
-                ))}
-              </View>
-            </LinearGradient>
+            <View style={styles.stampRow}>
+              {dataSummary.map((item) => (
+                <StampBadge key={item.label} {...item} />
+              ))}
+            </View>
           </View>
 
-          {/* 今日の予定 */}
+          {/* 今日の流れ */}
           <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <View>
-                <ThemedText type="smallBold">今日の予定</ThemedText>
-                <View style={[styles.sectionLine, { backgroundColor: Accent.green }]} />
-              </View>
-              <TouchableOpacity onPress={() => router.push('/events' as any)}>
-                <ThemedText type="small" themeColor="textSecondary">すべて →</ThemedText>
-              </TouchableOpacity>
+            <View style={styles.sectionTitleWrap}>
+              <ThemedText type="smallBold">今日の流れ</ThemedText>
+              <View style={[styles.sectionLine, { backgroundColor: Accent.green }]} />
             </View>
-            {todayEvents.length === 0 ? (
+            {flowItems.length === 0 ? (
               <Card style={styles.empty}>
-                <ThemedText type="small" themeColor="textSecondary">今日の予定はまだありません</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">まだ今日の記録はありません</ThemedText>
               </Card>
             ) : (
-              todayEvents.map((event) => (
-                <TouchableOpacity
-                  key={event.id}
-                  onPress={() => router.push({ pathname: '/events/[id]' as any, params: { id: event.id } })}
-                  activeOpacity={0.8}
-                >
-                  <Card style={styles.eventCard}>
-                    <View style={styles.eventRow}>
-                      <View style={[styles.eventDot, { backgroundColor: Accent.green }]} />
-                      <View style={styles.eventContent}>
-                        <ThemedText type="smallBold">{event.title}</ThemedText>
-                        <ThemedText type="small" themeColor="textSecondary">
-                          {formatDateTime(event.startAt)} · {event.location}
-                        </ThemedText>
-                        <ThemedText type="small" themeColor="textSecondary">
-                          {event.participantIds.map((id) => getUserById(id)?.displayName).join('、')}
-                        </ThemedText>
+              <View style={styles.timeline}>
+                {flowItems.map((item, index) => {
+                  const content = (
+                    <View style={styles.flowRow}>
+                      <View style={styles.flowTimeCol}>
+                        <ThemedText type="small" themeColor="textSecondary">{formatTime(item.time)}</ThemedText>
+                        {index < flowItems.length - 1 && <View style={styles.flowConnector} />}
                       </View>
-                      <View style={styles.statusBadge}>
-                        <ThemedText style={styles.statusText}>
-                          {event.status === 'shared' ? '共有済み' : event.status === 'confirmed' ? '確定' : '下書き'}
-                        </ThemedText>
+                      <View style={styles.flowIconWrap}>
+                        <ThemedText style={styles.flowIcon}>{item.icon}</ThemedText>
                       </View>
+                      <Card style={styles.flowCard}>
+                        <View style={styles.flowCardInner}>
+                          <View style={styles.flowCardText}>
+                            <ThemedText type="smallBold">{item.title}</ThemedText>
+                            {item.subtitle && (
+                              <ThemedText type="small" themeColor="textSecondary">{item.subtitle}</ThemedText>
+                            )}
+                          </View>
+                          {item.participantIds && item.participantIds.length > 0 && (
+                            <AvatarStack
+                              people={item.participantIds
+                                .map((id) => getUserById(id))
+                                .filter((u): u is NonNullable<typeof u> => !!u)}
+                            />
+                          )}
+                        </View>
+                      </Card>
                     </View>
-                  </Card>
-                </TouchableOpacity>
-              ))
+                  );
+                  return item.onPress ? (
+                    <TouchableOpacity key={item.id} onPress={item.onPress} activeOpacity={0.8}>
+                      {content}
+                    </TouchableOpacity>
+                  ) : (
+                    <View key={item.id}>{content}</View>
+                  );
+                })}
+              </View>
             )}
           </View>
 
-          {/* 日記の作成状況 */}
+          {/* 今日のまとめ */}
           <View style={[styles.section, styles.lastSection]}>
             <View style={styles.sectionTitleWrap}>
-              <ThemedText type="smallBold">日記の作成状況</ThemedText>
+              <ThemedText type="smallBold">今日のまとめ</ThemedText>
               <View style={[styles.sectionLine, { backgroundColor: Accent.red }]} />
             </View>
-            <Card variant="elevated" style={styles.diaryCard}>
+            <Card variant="elevated" borderColor={Pastel.coral} style={styles.diaryCard}>
               <View style={styles.diaryCardHeader}>
-                <ThemedText style={styles.diaryEmoji}>📖</ThemedText>
+                <View style={styles.diaryEmojiWrap}>
+                  <ThemedText style={styles.diaryEmoji}>📖</ThemedText>
+                </View>
                 <View style={styles.diaryCardText}>
                   <ThemedText type="smallBold">今日の日記を作ろう</ThemedText>
                   <ThemedText type="small" themeColor="textSecondary">{includedCount}件の出来事を記録中</ThemedText>
@@ -170,48 +210,57 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   greeting: { marginTop: 2 },
-  settingsButton: { padding: Spacing.one, marginTop: 4 },
-  settingsIcon: { fontSize: 20 },
-  section: { paddingHorizontal: Spacing.four, marginTop: Spacing.three, gap: Spacing.two },
+  settingsButton: {
+    padding: Spacing.two,
+    marginTop: 4,
+    borderRadius: Radius.pill,
+    backgroundColor: '#F2EDE5',
+  },
+  settingsIcon: { fontSize: 18 },
+  section: { paddingHorizontal: Spacing.four, marginTop: Spacing.four, gap: Spacing.three },
   lastSection: { marginBottom: Spacing.six },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   sectionTitleWrap: { gap: 3 },
   sectionLine: { height: 2, width: 28, borderRadius: 1 },
-  summaryBanner: {
-    borderRadius: Radius.md,
-    padding: Spacing.four,
-    gap: Spacing.two,
-    ...Shadow.strong,
-  },
-  summaryBannerTitle: { color: 'rgba(255,255,255,0.7)', fontSize: 12, fontWeight: '600', letterSpacing: 0.5 },
-  summaryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
-  summaryItem: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one, minWidth: '45%' },
-  summaryEmoji: { fontSize: 16 },
-  summaryLabel: { color: '#fff', fontSize: 13, fontWeight: '500' },
+  stampRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   empty: { padding: Spacing.three, alignItems: 'center' },
-  eventCard: { padding: Spacing.three },
-  eventRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.two },
-  eventDot: { width: 8, height: 8, borderRadius: 4, marginTop: 5 },
-  eventContent: { flex: 1, gap: 2 },
-  statusBadge: {
-    backgroundColor: '#F5F5F5',
-    paddingHorizontal: Spacing.two,
-    paddingVertical: 3,
-    borderRadius: Radius.pill,
+
+  timeline: { gap: Spacing.two },
+  flowRow: { flexDirection: 'row', gap: Spacing.two, alignItems: 'flex-start' },
+  flowTimeCol: { width: 40, alignItems: 'center', gap: 4 },
+  flowConnector: { width: 1, flex: 1, minHeight: 12, backgroundColor: '#EDE8E0', marginTop: 2 },
+  flowIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#FFFCF8',
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: '#EDE8E0',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  statusText: { fontSize: 11, color: '#555', fontWeight: '600' },
+  flowIcon: { fontSize: 15 },
+  flowCard: { flex: 1, padding: Spacing.three, marginBottom: Spacing.two },
+  flowCardInner: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: Spacing.two },
+  flowCardText: { flex: 1, gap: 2 },
+
   diaryCard: { padding: Spacing.four, gap: Spacing.three },
-  diaryCardHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
-  diaryEmoji: { fontSize: 32 },
+  diaryCardHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
+  diaryEmojiWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Pastel.coral,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  diaryEmoji: { fontSize: 24 },
   diaryCardText: { gap: 2 },
   diaryButtonRow: { flexDirection: 'row', gap: Spacing.two },
   outlineButton: {
     flex: 1,
     paddingVertical: 12,
     paddingHorizontal: Spacing.three,
-    borderRadius: Radius.md,
+    borderRadius: Radius.pill,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#D4F0E4',

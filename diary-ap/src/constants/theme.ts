@@ -30,6 +30,18 @@ export const Accent = {
   green: '#3DB870',  // ライン・進捗・完了
 } as const;
 
+// パステルカラー（スタンプ・カテゴリ分類・淡い枠線用）
+export const Pastel = {
+  coral: '#FCE0DD',
+  coralText: '#C85A50',
+  mint: '#DCEFE3',
+  mintText: '#3B8F63',
+  sky: '#DCEAF6',
+  skyText: '#4A85B0',
+  butter: '#FBEFD2',
+  butterText: '#B08A2E',
+} as const;
+
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 
 export const Fonts = Platform.select({
