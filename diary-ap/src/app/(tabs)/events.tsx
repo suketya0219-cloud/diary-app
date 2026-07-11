@@ -2,10 +2,13 @@ import { router } from 'expo-router';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AvatarStack } from '@/components/avatar-stack';
+import { Card } from '@/components/card';
+import { GradientButton } from '@/components/gradient-button';
+import { StampBadge } from '@/components/stamp-badge';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { Accent, Pastel, Radius, Spacing } from '@/constants/theme';
 import {
   CURRENT_USER_ID,
   MOCK_EVENTS,
@@ -35,15 +38,26 @@ function statusLabel(status: string) {
   return map[status] ?? status;
 }
 
+function statusStamp(status: SharedEvent['status']) {
+  switch (status) {
+    case 'completed': return { background: Pastel.mint, textColor: Pastel.mintText, emoji: '✓' };
+    case 'confirmed': return { background: Pastel.sky, textColor: Pastel.skyText, emoji: '📌' };
+    case 'shared': return { background: Pastel.butter, textColor: Pastel.butterText, emoji: '🔗' };
+    case 'cancelled': return { background: '#F2EDE5', textColor: '#999999', emoji: '×' };
+    default: return { background: Pastel.coral, textColor: Pastel.coralText, emoji: '✎' };
+  }
+}
+
 function EventCard({ event }: { event: SharedEvent }) {
-  const theme = useTheme();
   const res = getResponseFor(event.id, CURRENT_USER_ID);
-  const participants = event.participantIds.map((id) => getUserById(id)?.displayName).join('、');
-  const isToday = event.startAt.startsWith(TODAY);
+  const stamp = statusStamp(event.status);
+  const participants = event.participantIds
+    .map((id) => getUserById(id))
+    .filter((u): u is NonNullable<typeof u> => !!u);
 
   return (
     <TouchableOpacity onPress={() => router.push({ pathname: '/events/[id]' as any, params: { id: event.id } })} activeOpacity={0.8}>
-      <ThemedView type="backgroundElement" style={styles.card}>
+      <Card borderColor={stamp.background} style={styles.card}>
         <View style={styles.cardRow}>
           <View style={styles.cardContent}>
             <ThemedText type="smallBold">{event.title}</ThemedText>
@@ -51,41 +65,30 @@ function EventCard({ event }: { event: SharedEvent }) {
               {formatDateTime(event.startAt)} - {formatTime(event.endAt)}
             </ThemedText>
             <ThemedText type="small" themeColor="textSecondary">{event.location || '場所未定'}</ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">参加者: {participants}</ThemedText>
           </View>
-          <View style={[
-            styles.statusPill,
-            { backgroundColor: event.status === 'completed' ? '#34C759' : isToday ? theme.text : theme.backgroundElement }
-          ]}>
-            <ThemedText
-              type="small"
-              style={{ color: event.status === 'completed' || isToday ? (theme.background) : undefined }}
-            >
-              {statusLabel(event.status)}
-            </ThemedText>
+          <StampBadge emoji={stamp.emoji} label={statusLabel(event.status)} background={stamp.background} textColor={stamp.textColor} />
+        </View>
+        <View style={styles.cardFooter}>
+          {participants.length > 0 && <AvatarStack people={participants} size={22} />}
+          <View style={styles.pillRow}>
+            {res && (
+              <View style={[styles.pill, { backgroundColor: Pastel.sky }]}>
+                <ThemedText type="small" style={{ color: Pastel.skyText, fontSize: 11 }}>{statusLabel(res.status)}</ThemedText>
+              </View>
+            )}
+            {event.sharedVia.length > 0 && (
+              <View style={[styles.pill, { backgroundColor: '#F2EDE5' }]}>
+                <ThemedText type="small" themeColor="textSecondary" style={{ fontSize: 11 }}>{event.sharedVia.join(' / ')}</ThemedText>
+              </View>
+            )}
           </View>
         </View>
-        <View style={styles.pillRow}>
-          {res && (
-            <View style={[styles.pill, { backgroundColor: theme.backgroundSelected }]}>
-              <ThemedText type="small" themeColor="textSecondary">{statusLabel(res.status)}</ThemedText>
-            </View>
-          )}
-          {event.sharedVia.length > 0 && (
-            <View style={[styles.pill, { backgroundColor: theme.backgroundSelected }]}>
-              <ThemedText type="small" themeColor="textSecondary">{event.sharedVia.join(' / ')}</ThemedText>
-            </View>
-          )}
-        </View>
-      </ThemedView>
+      </Card>
     </TouchableOpacity>
   );
 }
 
 export default function EventsScreen() {
-  const theme = useTheme();
-  const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
-
   const todayEvents = MOCK_EVENTS.filter((e) => e.startAt.startsWith(TODAY));
   const upcomingEvents = MOCK_EVENTS.filter((e) => e.startAt > `${TODAY}T23:59`);
   const pendingInvites = MOCK_RESPONSES.filter(
@@ -94,10 +97,10 @@ export default function EventsScreen() {
   const pastEvents = MOCK_EVENTS.filter((e) => e.status === 'completed');
 
   const sections = [
-    { title: '今日', events: todayEvents },
-    { title: '今後', events: upcomingEvents },
-    { title: '回答待ちの招待', events: pendingInvites },
-    { title: '過去', events: pastEvents },
+    { title: '今日', events: todayEvents, accent: Accent.red },
+    { title: '今後', events: upcomingEvents, accent: Accent.green },
+    { title: '回答待ちの招待', events: pendingInvites, accent: Pastel.butterText },
+    { title: '過去', events: pastEvents, accent: '#999999' },
   ];
 
   return (
@@ -108,21 +111,20 @@ export default function EventsScreen() {
             <ThemedText type="subtitle">予定</ThemedText>
           </View>
 
-          <TouchableOpacity
-            style={[styles.createButton, { backgroundColor: theme.text }]}
-            onPress={() => router.push('/ai-chat')}
-            activeOpacity={0.8}
-          >
-            <ThemedText style={[styles.createButtonText, { color: theme.background }]}>＋ 予定を作る</ThemedText>
-          </TouchableOpacity>
+          <GradientButton style={styles.createButton} onPress={() => router.push('/ai-chat')}>
+            <ThemedText style={styles.createButtonText}>＋ 予定を作る</ThemedText>
+          </GradientButton>
 
-          {sections.map(({ title, events }) => (
+          {sections.map(({ title, events, accent }) => (
             <View key={title} style={styles.section}>
-              <ThemedText type="smallBold" style={styles.sectionTitle}>{title}</ThemedText>
+              <View style={styles.sectionTitleWrap}>
+                <ThemedText type="smallBold">{title}</ThemedText>
+                <View style={[styles.sectionLine, { backgroundColor: accent }]} />
+              </View>
               {events.length === 0 ? (
-                <ThemedView type="backgroundElement" style={styles.empty}>
-                  <ThemedText type="small" themeColor="textSecondary">{title}の予定はありません。</ThemedText>
-                </ThemedView>
+                <Card style={styles.empty}>
+                  <ThemedText type="small" themeColor="textSecondary">{title}の予定はありません</ThemedText>
+                </Card>
               ) : (
                 events.map((event) => <EventCard key={event.id} event={event} />)
               )}
@@ -150,29 +152,27 @@ const styles = StyleSheet.create({
   createButton: {
     marginHorizontal: Spacing.four,
     marginBottom: Spacing.two,
-    padding: Spacing.three,
-    borderRadius: Spacing.two,
-    alignItems: 'center',
+    borderRadius: Radius.pill,
   },
   createButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#fff',
+    paddingVertical: Spacing.one,
   },
   section: {
     paddingHorizontal: Spacing.four,
-    marginTop: Spacing.three,
+    marginTop: Spacing.four,
     gap: Spacing.two,
   },
-  sectionTitle: {
-    marginBottom: Spacing.one,
-  },
+  sectionTitleWrap: { gap: 3, marginBottom: Spacing.one },
+  sectionLine: { height: 2, width: 28, borderRadius: 1 },
   lastSection: {
     height: Spacing.six,
   },
   card: {
     padding: Spacing.three,
-    borderRadius: Spacing.two,
-    gap: Spacing.one,
+    gap: Spacing.two,
   },
   cardRow: {
     flexDirection: 'row',
@@ -184,25 +184,23 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: Spacing.half,
   },
-  statusPill: {
-    paddingHorizontal: Spacing.two,
-    paddingVertical: Spacing.half,
-    borderRadius: Spacing.one,
+  cardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   pillRow: {
     flexDirection: 'row',
     gap: Spacing.one,
     flexWrap: 'wrap',
-    marginTop: Spacing.one,
   },
   pill: {
     paddingHorizontal: Spacing.two,
-    paddingVertical: 2,
-    borderRadius: Spacing.one,
+    paddingVertical: 3,
+    borderRadius: Radius.pill,
   },
   empty: {
     padding: Spacing.three,
-    borderRadius: Spacing.two,
     alignItems: 'center',
   },
 });

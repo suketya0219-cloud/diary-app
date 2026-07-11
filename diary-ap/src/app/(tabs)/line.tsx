@@ -3,12 +3,15 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Card } from '@/components/card';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { Accent, Pastel, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { FRIENDS } from '@/mock/persona';
 import { MOCK_EVENTS } from '@/mock/events';
+
+const AVATAR_PALETTE = [Pastel.butter, Pastel.mint, Pastel.sky, Pastel.coral];
 
 type SubTab = 'friends' | 'chats';
 
@@ -41,7 +44,7 @@ export default function LineScreen() {
           {(['chats', 'friends'] as SubTab[]).map((tab) => (
             <TouchableOpacity
               key={tab}
-              style={[styles.subTab, activeTab === tab && { borderBottomColor: theme.text, borderBottomWidth: 2 }]}
+              style={[styles.subTab, activeTab === tab && { borderBottomColor: Accent.red, borderBottomWidth: 2 }]}
               onPress={() => setActiveTab(tab)}
             >
               <ThemedText
@@ -57,14 +60,14 @@ export default function LineScreen() {
 
         {activeTab === 'chats' ? (
           <ScrollView showsVerticalScrollIndicator={false}>
-            {FRIENDS.map((friend) => (
+            {FRIENDS.map((friend, i) => (
               <TouchableOpacity
                 key={friend.id}
                 onPress={() => router.push({ pathname: '/line-chat/[friendId]' as any, params: { friendId: friend.id } })}
                 activeOpacity={0.8}
               >
-                <View style={[styles.chatRow, { borderBottomColor: theme.backgroundElement }]}>
-                  <View style={styles.avatarCircle}>
+                <View style={[styles.chatRow, { borderBottomColor: '#F2EDE5' }]}>
+                  <View style={[styles.avatarCircle, { backgroundColor: AVATAR_PALETTE[i % AVATAR_PALETTE.length] }]}>
                     <ThemedText style={styles.avatarEmoji}>{friend.avatarEmoji}</ThemedText>
                   </View>
                   <View style={styles.chatContent}>
@@ -75,7 +78,7 @@ export default function LineScreen() {
                     <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>{friend.lastMessage}</ThemedText>
                   </View>
                   {friend.unreadCount > 0 && (
-                    <View style={[styles.badge, { backgroundColor: '#06C755' }]}>
+                    <View style={[styles.badge, { backgroundColor: Accent.red }]}>
                       <ThemedText style={styles.badgeText}>{friend.unreadCount}</ThemedText>
                     </View>
                   )}
@@ -88,10 +91,10 @@ export default function LineScreen() {
             <ThemedText type="small" themeColor="textSecondary" style={styles.friendsHint}>
               友達を選んで予定に招待できます
             </ThemedText>
-            {FRIENDS.map((friend) => (
-              <ThemedView key={friend.id} type="backgroundElement" style={styles.friendCard}>
+            {FRIENDS.map((friend, i) => (
+              <Card key={friend.id} style={styles.friendCard}>
                 <View style={styles.friendRow}>
-                  <View style={styles.avatarCircle}>
+                  <View style={[styles.avatarCircle, { backgroundColor: AVATAR_PALETTE[i % AVATAR_PALETTE.length] }]}>
                     <ThemedText style={styles.avatarEmoji}>{friend.avatarEmoji}</ThemedText>
                   </View>
                   <View style={styles.friendInfo}>
@@ -112,14 +115,14 @@ export default function LineScreen() {
                               key={event.id}
                               style={[
                                 styles.eventPill,
-                                { backgroundColor: invited ? '#34C759' : theme.backgroundSelected }
+                                { backgroundColor: invited ? Pastel.mint : Pastel.sky }
                               ]}
                               onPress={() => !invited && setInvitedMap((p) => ({ ...p, [key]: true }))}
                               activeOpacity={0.8}
                             >
                               <ThemedText
                                 type="small"
-                                style={{ color: invited ? '#fff' : undefined }}
+                                style={{ color: invited ? Pastel.mintText : Pastel.skyText }}
                               >
                                 {invited ? '招待済み ✓' : `📅 ${event.title}`}
                               </ThemedText>
@@ -130,7 +133,7 @@ export default function LineScreen() {
                     </ScrollView>
                   </View>
                 )}
-              </ThemedView>
+              </Card>
             ))}
           </ScrollView>
         )}
@@ -164,7 +167,6 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#e8e8e8',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -176,17 +178,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   badge: {
-    width: 20,
+    minWidth: 20,
     height: 20,
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 5,
   },
   badgeText: { color: '#fff', fontSize: 11, fontWeight: '700' },
   friendsList: { padding: Spacing.four, gap: Spacing.three },
   friendsHint: { marginBottom: Spacing.one },
   friendCard: {
-    borderRadius: Spacing.two,
     padding: Spacing.three,
     gap: Spacing.two,
   },
@@ -202,6 +204,6 @@ const styles = StyleSheet.create({
   eventPill: {
     paddingHorizontal: Spacing.two,
     paddingVertical: Spacing.one,
-    borderRadius: Spacing.one,
+    borderRadius: Radius.pill,
   },
 });
